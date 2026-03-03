@@ -1,0 +1,696 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ИИ для учителей — Диаграммы и графики</title>
+<style>
+/* ── RESET ── */
+*{margin:0;padding:0;box-sizing:border-box}
+
+/* ── BASE ── */
+body{
+  font-family:'Segoe UI',Tahoma,Geneva,Verdana,sans-serif;
+  background:#f0eef8;
+  min-height:100vh;
+  padding:clamp(8px,2vw,24px);
+}
+
+/* ── PAGE SHELL ── */
+.page{
+  display:none;
+  max-width:1200px;
+  margin:0 auto;
+  background:#fff;
+  border:3px dashed #7c6cb0;
+  border-radius:28px;
+  padding:clamp(16px,3vw,40px);
+  position:relative;
+  animation:fadeIn .35s ease;
+}
+.page.active{display:block}
+@keyframes fadeIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
+
+/* ── MESSAGES ── */
+.msg{
+  border-radius:14px;
+  padding:clamp(10px,2vw,18px) clamp(12px,2.5vw,22px);
+  margin-bottom:14px;
+  font-size:clamp(14px,2vw,18px);
+  line-height:1.6;
+  max-width:100%;
+}
+.msg-t{background:#e8e0f0}
+.msg-a{background:#fef3d0}
+.lbl-t{color:#7c6cb0;font-weight:700}
+.lbl-a{color:#d4a017;font-weight:700}
+
+/* ── NAV BUTTONS ── */
+.nav-row{
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  flex-wrap:wrap;
+  gap:10px;
+  margin-top:28px;
+}
+.btn{
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  gap:6px;
+  padding:10px 26px;
+  border-radius:10px;
+  border:none;
+  cursor:pointer;
+  font-size:clamp(13px,1.8vw,16px);
+  font-family:inherit;
+  font-weight:500;
+  text-decoration:none;
+  transition:transform .18s,box-shadow .18s;
+  white-space:nowrap;
+}
+.btn:hover{transform:translateY(-2px);box-shadow:0 5px 14px rgba(0,0,0,.15)}
+.btn-p{background:#7c6cb0;color:#fff}
+.btn-g{background:#5bb89a;color:#fff}
+.btn-y{background:#f5c842;color:#333}
+.btn-home{background:#b38bfa;color:#fff}
+.btn-continue{background:#7c6cb0;color:#fff}
+.btn-try{background:#9b87cc;color:#fff}
+.btn-result{background:#7c6cb0;color:#fff}
+.btn-start{
+  display:inline-flex !important;
+  width:auto !important;
+  max-width:fit-content !important;
+  padding:10px 28px !important;
+  background:#b38bfa !important;
+  color:#fff !important;
+  margin-top:24px;
+}
+
+/* ── CHOICE BUTTONS (main page) ── */
+.choices{
+  display:flex;
+  flex-direction:column;
+  gap:16px;
+  margin-top:32px;
+  margin-left:clamp(0px,4vw,50px);
+}
+.choice-btn{
+  display:flex;
+  align-items:center;
+  gap:10px;
+  padding:12px 28px;
+  border-radius:12px;
+  border:none;
+  cursor:pointer;
+  font-size:clamp(14px,2vw,17px);
+  font-family:inherit;
+  font-weight:500;
+  text-align:left;
+  width:fit-content;
+  max-width:100%;
+  transition:transform .18s,box-shadow .18s;
+}
+.choice-btn:hover{transform:translateY(-2px);box-shadow:0 5px 16px rgba(0,0,0,.18)}
+.choice-p{background:#7c6cb0;color:#fff}
+.choice-g{background:#5bb89a;color:#fff}
+.choice-y{background:#f5c842;color:#333}
+
+/* ── PAGE SCREENSHOT ── */
+.screen-wrap{
+  border:2px dashed #c5b8e8;
+  border-radius:18px;
+  overflow:hidden;
+  margin:20px 0;
+  position:relative;
+}
+.screen-wrap img{
+  width:100%;
+  height:auto;
+  display:block;
+}
+
+/* ── STEPS ROW ── */
+.steps-row{
+  display:flex;
+  flex-wrap:wrap;
+  gap:20px 40px;
+  margin:18px 0 8px;
+  align-items:flex-start;
+}
+.step{
+  display:flex;
+  align-items:flex-start;
+  gap:10px;
+  font-size:clamp(13px,1.8vw,16px);
+}
+.step-num{font-weight:700;white-space:nowrap;color:#333}
+.step-arrow{color:#3a6fd8;font-size:1.2em;margin-top:1px}
+.step-text{line-height:1.5;max-width:260px}
+.step-text b{font-weight:700}
+
+/* ── INSTRUCTION BOX ── */
+.instr-box{
+  background:#f0eef8;
+  border-radius:14px;
+  padding:clamp(12px,2vw,18px) clamp(14px,2.5vw,24px);
+  font-size:clamp(13px,1.8vw,16px);
+  line-height:1.6;
+  margin-bottom:16px;
+}
+
+/* ── FLOURISH CARD ── */
+.flourish-card{
+  display:inline-flex;
+  align-items:center;
+  gap:12px;
+  background:#111;
+  border-radius:14px;
+  padding:14px 20px;
+  text-decoration:none;
+  color:#fff;
+  font-size:clamp(13px,1.8vw,15px);
+  transition:transform .18s,box-shadow .18s;
+  margin-top:6px;
+}
+.flourish-card:hover{transform:translateY(-2px);box-shadow:0 6px 18px rgba(0,0,0,.25)}
+.flourish-logo{
+  font-size:1.6em;
+  font-weight:900;
+  letter-spacing:-.03em;
+}
+
+/* ── DOWNLOAD SECTION ── */
+.download-section{
+  display:flex;
+  flex-wrap:wrap;
+  gap:24px;
+  align-items:center;
+  margin:24px 0 8px;
+  justify-content:center;
+}
+.download-btn{
+  display:inline-flex;
+  align-items:center;
+  gap:10px;
+  padding:14px 24px;
+  background:#fff;
+  border:2px solid #e55;
+  border-radius:14px;
+  color:#333;
+  font-size:clamp(13px,1.8vw,15px);
+  cursor:pointer;
+  text-decoration:none;
+  transition:background .18s,transform .18s;
+}
+.download-btn:hover{background:#fff5f5;transform:translateY(-2px)}
+.download-icon{color:#e55;font-size:1.6em}
+.download-text{line-height:1.4}
+.download-text small{display:block;color:#999;font-size:.85em}
+
+/* ── FLOURISH IMAGE CARD ── */
+.flourish-img-card{
+  display:block;
+  border-radius:14px;
+  overflow:hidden;
+  width:clamp(160px,22vw,240px);
+  flex-shrink:0;
+  cursor:pointer;
+  transition:transform .18s,box-shadow .18s;
+  text-decoration:none;
+}
+.flourish-img-card:hover{transform:scale(1.03);box-shadow:0 8px 24px rgba(0,0,0,.2)}
+.flourish-img-card img{width:100%;height:auto;display:block}
+
+/* ── DASHED ARROW connector ── */
+.connector{
+  display:flex;
+  justify-content:flex-end;
+  padding-right:clamp(20px,5vw,80px);
+  margin:8px 0;
+}
+.connector svg{opacity:.8}
+
+/* ── BLINKING POINTER ── */
+.blink-ptr{
+  display:inline-flex;
+  align-items:center;
+  animation:blinkPtr 1.1s ease-in-out infinite;
+}
+@keyframes blinkPtr{
+  0%,100%{opacity:1;transform:scale(1)}
+  50%{opacity:.4;transform:scale(1.18)}
+}
+.blink-ptr img{width:clamp(28px,4vw,44px);height:auto}
+
+/* ── RESPONSIVE ── */
+@media(max-width:700px){
+  .steps-row{flex-direction:column;gap:14px}
+  .nav-row{flex-direction:column}
+  .btn,.choice-btn{width:100%;justify-content:center}
+  .btn-start{width:auto !important}
+  .download-section{flex-direction:column;align-items:flex-start}
+  .flourish-img-card{width:100%}
+  .choices{margin-left:0}
+  .connector{padding-right:10px}
+}
+@media(max-width:420px){
+  .page{padding:12px 10px 16px;border-radius:16px}
+  .msg{font-size:14px}
+}
+</style>
+</head>
+<body>
+
+<!-- ══════════════════════════════════════
+     PAGE 0 — ГЛАВНАЯ
+══════════════════════════════════════ -->
+<div class="page active" id="p0">
+  <div class="msg msg-t">
+    <span class="lbl-t">Учитель:</span> У меня есть идея, но есть и проблема с визуализацией <b>графиков и диаграмм</b>
+  </div>
+
+  <div class="choices">
+    <button class="choice-btn choice-p" style="border-radius: 6px; width: 400px; text-align: center; padding: 10px 0;font-weight: normal;" onclick="go('p-him-1')">
+	<span class="choice-icon">╰┈➤ˎˊ˗</span>
+   
+      Это было с учителем химии
+    </button>
+    <button class="choice-btn choice-g" style="border-radius: 6px; width: 400px; text-align: center; padding: 10px 0;font-weight: normal;"сonclick="go('p-bio-1')">
+      <span class="choice-icon">╰┈➤ˎˊ˗</span>
+      Это было с учителем биологии
+    </button>
+    <button class="choice-btn choice-y" style="border-radius: 6px; width: 400px; text-align: center; padding: 10px 0;font-weight: normal;"onclick="go('p-geo-1')">
+      <span class="choice-icon">╰┈➤ˎˊ˗</span>
+	      Это было с учителем географии
+    </button>
+  </div>
+
+  <a href="../index.html" style="border-radius: 6px; width: 400px; text-align: center; padding: 10px 0;font-weight: normal;"class="btn btn-start">На старт</a>
+</div>
+
+<!-- ══════════════════════════════════════
+     ХИМИЯ — страницы
+══════════════════════════════════════ -->
+
+<!-- ХИМ 1 — диалог -->
+<div class="page" id="p-him-1">
+  <div class="msg msg-t">
+    <span class="lbl-t">Учитель:</span> Для решения задач или для подготовки экспериментов мне необходимо показать учащимся таблицу растворимости аммония при разных температурах. Но не хочу, чтобы это была прост табличка. Надо сделать это как-то наглядным. Как?
+  </div>
+  <div class="msg msg-a">
+    <span class="lbl-a">ИИ:</span> Попробуйте заменить таблицы на интерактивные графики
+  </div>
+  <div class="msg msg-t">
+    <span class="lbl-t">Учитель:</span> Это долго, нет на это времени. Есть вариант проще?
+  </div>
+  <div class="msg msg-a">
+    <span class="lbl-a">ИИ:</span> Это можно сделать быстро. Давай, попробуем
+  </div>
+
+  
+
+  <div class="nav-row">
+    <button class="btn btn-home" onclick="go('p0')">На главную</button>
+    <button class="btn btn-continue" onclick="go('p-him-2')">Продолжение →</button>
+  </div>
+</div>
+
+<!-- ХИМ 2 — Flourish шаблоны -->
+<div class="page" id="p-him-2">
+  <div class="instr-box">
+    Выбери шаблон диаграммы и загрузи твою табличку с данными в формате xlsx (т.е. из MS Excel). И следуй подсказкам. Интерфейс вполне дружелюбный у этого приложения
+  </div>
+  <div class="screen-wrap">
+    <img src="img/kom50.png">
+  </div>
+  <div class="nav-row">
+    <button class="btn btn-home" onclick="go('p0')">На главную</button>
+    <button class="btn btn-continue" onclick="go('p-him-3')">Продолжить настройку →</button>
+  </div>
+</div>
+
+<!-- ХИМ 3 — Upload data -->
+<div class="page" id="p-him-3">
+  <div class="instr-box">Загрузи файл с данными формате xlsx</div>
+  <div class="screen-wrap">
+   <img src="img/kom51.png">
+  </div>
+  <div class="steps-row">
+    <div class="step"><span class="step-num">Шаг 1</span><span class="step-arrow">→</span><span class="step-text">Кликнуть <b>"Data"</b></span></div>
+    <div class="step"><span class="step-num">Шаг 2</span><span class="step-arrow">→</span><span class="step-text">Кликнуть <b>"Upload data"</b></span></div>
+    <div class="step"><span class="step-num">Шаг 3</span><span class="step-arrow">→</span><span class="step-text">Загрузить файл с табличными данными нажать <b>"Import"</b></span></div>
+  </div>
+  <div class="nav-row">
+    <button class="btn btn-home" onclick="go('p0')">На главную</button>
+    <button class="btn btn-continue" onclick="go('p-him-4')">Продолжить настройку →</button>
+  </div>
+</div>
+
+<!-- ХИМ 4 — Data editing -->
+<div class="page" id="p-him-4">
+  <div class="screen-wrap">
+  <img src="img/kom52.png">
+  </div>
+  <div class="steps-row">
+    <div class="step"><span class="step-num">Шаг 4</span><span class="step-arrow">→</span><span class="step-text">При необходимости удалить лишние данные</span></div>
+    <div class="step"><span class="step-num">Шаг 5</span><span class="step-arrow">→</span><span class="step-text">Кликнуть на предварительный просмотр</span></div>
+  </div>
+  <div class="nav-row">
+    <button class="btn btn-home" onclick="go('p0')">На главную</button>
+    <button class="btn btn-continue" onclick="go('p-him-5')">Продолжить настройку →</button>
+  </div>
+</div>
+
+<!-- ХИМ 5 — Preview + publish -->
+<div class="page" id="p-him-5">
+  <div class="screen-wrap">
+<img src="img/kom53.png">
+  </div>
+  <div class="steps-row">
+    <div class="step"><span class="step-num">Шаг 6</span><span class="step-arrow">→</span><span class="step-text">Назовите файл</span></div>
+    <div class="step"><span class="step-num">Шаг 7</span><span class="step-arrow">→</span><span class="step-text">Опубликуйте. Копируйте ссылку, делитесь интерактивным изображением</span></div>
+  </div>
+  <div class="nav-row">
+    <button class="btn btn-result" onclick="go('p-him-result')">Результат</button>
+    <button class="btn btn-try" onclick="go('p-him-try')">Попробовать</button>
+  </div>
+</div>
+
+<!-- ХИМ — Результат -->
+<div class="page" id="p-him-result">
+<div class="flourish-embed flourish-chart" data-src="visualisation/26398329"><script src="https://public.flourish.studio/resources/embed.js"></script><noscript><img src="https://public.flourish.studio/visualisation/26398329/thumbnail" width="100%" alt="visualization" /></noscript></div>
+  <div class="nav-row">
+    <button class="btn btn-result" onclick="go('p-geo-result')">Результат</button>
+    <button class="btn btn-try" onclick="go('p-geo-try')">Попробовать</button>
+  </div>
+</div>
+
+<!-- ХИМ — Попробовать (скачать файл + ссылка на Flourish) -->
+<div class="page" id="p-him-try">
+  <div class="msg msg-t">
+    <span class="lbl-t">Учитель:</span> Для решения задач или для подготовки экспериментов мне необходимо показать учащимся таблицу растворимости аммония при разных температурах. Но не хочу, чтобы это была прост табличка. Надо сделать это как-то наглядным. Как?
+  </div>
+  <div class="msg msg-a">
+    <span class="lbl-a">ИИ:</span> Попробуйте заменить таблицы на интерактивные графики
+  </div>
+  <div class="msg msg-t">
+    <span class="lbl-t">Учитель:</span> Это долго, нет на это времени. Есть вариант проще?
+  </div>
+  <div class="msg msg-a">
+    <span class="lbl-a">ИИ:</span> Это можно сделать быстро. Давай, попробуем
+  </div>
+
+  <div class="download-section">
+    <a class="download-btn" id="dl-amm" download="Растворение NH4NO3.csv" href="data:text/csv;charset=utf-8;base64,77u/0KLQtdC80L/QtdGA0LDRgtGD0YDQsCAowrBDKSzQoNCw0YHRgtCy0L7RgNC10L3QuNC1IE5INE5PMyDQvdCwIDEwMCDQsyBIMk8KMCwxMTgKMTAsMTUwCjIwLDE5MgozMCwyNDIKNDAsMjk3CjUwLDM2Mgo2MCw0MjEKNzAsNDk5CjgwLDU3Ngo5MCw2NjkKMTAwLDc0MAo=">
+      <span class="download-icon">⬇</span>
+      <span class="download-text">
+        Скачайте файл "Растворение NH4NO3"
+        <small>и создайте свой график или диаграмму</small>
+      </span>
+    </a>
+    <a href="https://flourish.studio" target="_blank" class="flourish-img-card">
+    <img src="img/kom54.png">
+	</a>
+  </div>
+
+  <div class="nav-row">
+    <button class="btn btn-home" onclick="go('p0')">На главную</button>
+  </div>
+</div>
+
+
+<!-- ══════════════════════════════════════
+     БИОЛОГИЯ — страницы
+══════════════════════════════════════ -->
+
+<!-- БИО 1 — диалог -->
+<div class="page" id="p-bio-1">
+  <div class="msg msg-t">
+    <span class="lbl-t">Учитель:</span> Хочу показать ученикам, как распределяется численность носорогов по странам. Думаю, диаграмма будет наглядной
+  </div>
+  <div class="msg msg-a">
+    <span class="lbl-a">ИИ:</span> Отличная идея! У носорогов есть пять видов, и они сосредоточены в разных странах. Например, белые и чёрные носороги — в Африке, а индийские и яванские — в Азии. Какой формат диаграммы тебе ближе: карта мира с выделением стран или столбчатая диаграмма с цифрами?
+  </div>
+  <div class="msg msg-t">
+    <span class="lbl-t">Учитель:</span> Я точно не знаю. Какая лучше? Как посмотреть разные варианты?
+  </div>
+  <div class="msg msg-a">
+    <span class="lbl-a">ИИ:</span> Это можно сделать быстро. Начинаем
+  </div>
+
+    <div class="nav-row">
+    <button class="btn btn-home" onclick="go('p0')">На главную</button>
+    <button class="btn btn-continue" onclick="go('p-bio-2')">Продолжение →</button>
+  </div>
+</div>
+
+<!-- БИО 2 — Flourish шаблоны -->
+<div class="page" id="p-bio-2">
+  <div class="instr-box">
+    Выбери шаблон диаграммы и загрузи твою табличку с данными в формате xlsx (т.е. из MS Excel). И следуй подсказкам. Интерфейс вполне дружелюбный у этого приложения
+  </div>
+  <div class="screen-wrap">
+   <img src="img/kom55.png">
+  </div>
+  <div class="nav-row">
+    <button class="btn btn-home" onclick="go('p0')">На главную</button>
+    <button class="btn btn-continue" onclick="go('p-bio-3')">Продолжить настройку →</button>
+  </div>
+</div>
+
+<!-- БИО 3 — Upload data -->
+<div class="page" id="p-bio-3">
+  <div class="instr-box">Загрузи файл с данными формате xlsx</div>
+  <div class="screen-wrap">
+   <img src="img/kom56.png">
+  </div>
+  <div class="steps-row">
+    <div class="step"><span class="step-num">Шаг 1</span><span class="step-arrow">→</span><span class="step-text">Кликнуть <b>"Data"</b></span></div>
+    <div class="step"><span class="step-num">Шаг 2</span><span class="step-arrow">→</span><span class="step-text">Кликнуть <b>"Upload data"</b></span></div>
+    <div class="step"><span class="step-num">Шаг 3</span><span class="step-arrow">→</span><span class="step-text">Загрузить файл с табличными данными нажать <b>"Import"</b></span></div>
+  </div>
+  <div class="nav-row">
+    <button class="btn btn-home" onclick="go('p0')">На главную</button>
+    <button class="btn btn-continue" onclick="go('p-bio-4')">Продолжить настройку →</button>
+  </div>
+</div>
+
+<!-- БИО 4 — Data editing -->
+<div class="page" id="p-bio-4">
+  <div class="screen-wrap">
+ <img src="img/kom57.png">
+  </div>
+  <div class="steps-row">
+    <div class="step"><span class="step-num">Шаг 4</span><span class="step-arrow">→</span><span class="step-text">При необходимости удалить лишние данные</span></div>
+    <div class="step"><span class="step-num">Шаг 5</span><span class="step-arrow">→</span><span class="step-text">Кликнуть на предварительный просмотр</span></div>
+  </div>
+  <div class="nav-row">
+    <button class="btn btn-home" onclick="go('p0')">На главную</button>
+    <button class="btn btn-continue" onclick="go('p-bio-5')">Продолжить настройку →</button>
+  </div>
+</div>
+
+<!-- БИО 5 — Preview + publish -->
+<div class="page" id="p-bio-5">
+  <div class="screen-wrap">
+  <img src="img/kom57_2.png">
+  </div>
+  <div class="steps-row">
+    <div class="step"><span class="step-num">Шаг 6</span><span class="step-arrow">→</span><span class="step-text">Назовите файл</span></div>
+    <div class="step"><span class="step-num">Шаг 7</span><span class="step-arrow">→</span><span class="step-text">Опубликуйте. Копируйте ссылку, делитесь интерактивным изображением</span></div>
+  </div>
+  <div class="nav-row">
+    <button class="btn btn-result" onclick="go('p-bio-result')">Результат</button>
+    <button class="btn btn-try" onclick="go('p-bio-try')">Попробовать</button>
+  </div>
+</div>
+
+<!-- БИО — Результат -->
+<div class="page" id="p-bio-result">
+<div class="flourish-embed flourish-chart" data-src="visualisation/26405920"><script src="https://public.flourish.studio/resources/embed.js"></script><noscript><img src="https://public.flourish.studio/visualisation/26405920/thumbnail" width="100%" alt="visualization" /></noscript></div>
+  <div class="nav-row">
+    <button class="btn btn-result" onclick="go('p-geo-result')">Результат</button>
+    <button class="btn btn-try" onclick="go('p-geo-try')">Попробовать</button>
+  </div>
+</div>
+
+<!-- БИО — Попробовать -->
+<div class="page" id="p-bio-try">
+  <div class="msg msg-t">
+    <span class="lbl-t">Учитель:</span> Хочу показать ученикам, как распределяется численность носорогов по странам. Думаю, диаграмма будет наглядной
+  </div>
+  <div class="msg msg-a">
+    <span class="lbl-a">ИИ:</span> Отличная идея! У носорогов есть пять видов, и они сосредоточены в разных странах. Например, белые и чёрные носороги — в Африке, а индийские и яванские — в Азии. Какой формат диаграммы тебе ближе: карта мира с выделением стран или столбчатая диаграмма с цифрами?
+  </div>
+  <div class="msg msg-t">
+    <span class="lbl-t">Учитель:</span> Я точно не знаю. Какая лучше? Как посмотреть разные варианты?
+  </div>
+  <div class="msg msg-a">
+    <span class="lbl-a">ИИ:</span> Это можно сделать быстро. Начинаем
+  </div>
+
+  <div class="download-section">
+    <a class="download-btn" id="dl-rhin" download="Носороги.csv" href="data:text/csv;charset=utf-8;base64,77u/0KHRgtGA0LDQvdCwLNCn0LjRgdC70LXQvdC90L7RgdGC0Ywg0L3QvtGB0L7RgNC+0LPQvtCyCtCu0JDQoCwxNTk0MgrQndCw0LzQuNCx0LjRjyw2Mzc1CtCX0LjQvNCx0LDQsdCy0LUsMTA1NwrQkdC+0YLRgdCy0LDQvdCwLDUwNQrQmtC10L3QuNGPLDk4NwrQo9Cz0LDQvdC00LAsMzQK0J3QtdC/0LDQuyw3NTIK0JjQvdC00LjRjywzMjYyCtCX0LjQvNCx0LDQsdCy0LUsNTkyCtCi0LDQvdC30LDQvdC40Y8sMjEyCtCt0YHQstCw0YLQuNC90LgsMTQ2Cg==">
+      <span class="download-icon">⬇</span>
+      <span class="download-text">
+        Скачайте файл "Носороги"
+        <small>и создайте свой график или диаграмму</small>
+      </span>
+    </a>
+    <a href="https://flourish.studio" target="_blank" class="flourish-img-card">
+    <img src="img/kom54.png">
+   </a>
+  </div>
+
+  <div class="nav-row">
+    <button class="btn btn-home" onclick="go('p0')">На главную</button>
+  </div>
+</div>
+
+
+<!-- ══════════════════════════════════════
+     ГЕОГРАФИЯ — страницы
+══════════════════════════════════════ -->
+
+<!-- ГЕО 1 — диалог -->
+<div class="page" id="p-geo-1">
+  <div class="msg msg-t">
+    <span class="lbl-t">Учитель:</span> На уроках географии часто изучаем рейтинги стран по тому или иному показателю. Например, страны-лидеры по добыче нефти. Кажется, что ничего сложного, но учащиеся с неохотой эту информацию запоминают. Я хочу вместо обычных таблиц сделать запоминающиеся графики или диаграммы. Поможешь?
+  </div>
+  <div class="msg msg-a">
+    <span class="lbl-a">ИИ:</span> Попробуйте заменить таблицы на интерактивные графики
+  </div>
+  <div class="msg msg-t">
+    <span class="lbl-t">Учитель:</span> Это долго, нет на это времени. Есть вариант проще?
+  </div>
+  <div class="msg msg-a">
+    <span class="lbl-a">ИИ:</span> Это можно сделать быстро. Давай, попробуем
+  </div>
+ 
+  <div class="nav-row">
+    <button class="btn btn-home" onclick="go('p0')">На главную</button>
+    <button class="btn btn-continue" onclick="go('p-geo-2')">Продолжение →</button>
+  </div>
+</div>
+
+<!-- ГЕО 2 — Flourish шаблоны -->
+<div class="page" id="p-geo-2">
+  <div class="instr-box">
+    Выбери шаблон диаграммы и загрузи твою табличку с данными в формате xlsx (т.е. из MS Excel). И следуй подсказкам. Интерфейс вполне дружелюбный у этого приложения
+  </div>
+  <div class="screen-wrap">
+  <img src="img/kom59.png">
+  </div>
+  <div class="nav-row">
+    <button class="btn btn-home" onclick="go('p0')">На главную</button>
+    <button class="btn btn-continue" onclick="go('p-geo-3')">Продолжить настройку →</button>
+  </div>
+</div>
+
+<!-- ГЕО 3 — Upload data -->
+<div class="page" id="p-geo-3">
+  <div class="instr-box">Загрузи файл с данными формате xlsx</div>
+  <div class="screen-wrap">
+  <img src="img/kom60.png">
+  </div>
+  <div class="steps-row">
+    <div class="step"><span class="step-num">Шаг 1</span><span class="step-arrow">→</span><span class="step-text">Кликнуть <b>"Data"</b></span></div>
+    <div class="step"><span class="step-num">Шаг 2</span><span class="step-arrow">→</span><span class="step-text">Кликнуть <b>"Upload data"</b></span></div>
+    <div class="step"><span class="step-num">Шаг 3</span><span class="step-arrow">→</span><span class="step-text">Загрузить файл с табличными данными нажать <b>"Import"</b></span></div>
+  </div>
+  <div class="nav-row">
+    <button class="btn btn-home" onclick="go('p0')">На главную</button>
+    <button class="btn btn-continue" onclick="go('p-geo-4')">Продолжить настройку →</button>
+  </div>
+</div>
+
+<!-- ГЕО 4 — Data editing -->
+<div class="page" id="p-geo-4">
+  <div class="screen-wrap">
+   <img src="img/kom61.png">
+  </div>
+  <div class="steps-row">
+    <div class="step"><span class="step-num">Шаг 4</span><span class="step-arrow">→</span><span class="step-text">При необходимости удалить лишние данные</span></div>
+    <div class="step"><span class="step-num">Шаг 5</span><span class="step-arrow">→</span><span class="step-text">Кликнуть на предварительный просмотр</span></div>
+  </div>
+  <div class="nav-row">
+    <button class="btn btn-home" onclick="go('p0')">На главную</button>
+    <button class="btn btn-continue" onclick="go('p-geo-5')">Продолжить настройку →</button>
+  </div>
+</div>
+
+<!-- ГЕО 5 — Preview + publish -->
+<div class="page" id="p-geo-5">
+  <div class="screen-wrap">
+  <img src="img/kom62.png">
+ </div>
+  <div class="steps-row">
+    <div class="step"><span class="step-num">Шаг 6</span><span class="step-arrow">→</span><span class="step-text">Назовите файл</span></div>
+    <div class="step"><span class="step-num">Шаг 7</span><span class="step-arrow">→</span><span class="step-text">Опубликуйте. Копируйте ссылку, делитесь интерактивным изображением</span></div>
+  </div>
+  <div class="nav-row">
+    <button class="btn btn-result" onclick="go('p-geo-result')">Результат</button>
+    <button class="btn btn-try" onclick="go('p-geo-try')">Попробовать</button>
+  </div>
+</div>
+
+<!-- ГЕО — Результат -->
+<div class="page" id="p-geo-result">
+  <div class="flourish-embed flourish-chart" data-src="visualisation/26397901"><script src="https://public.flourish.studio/resources/embed.js"></script><noscript><img src="https://public.flourish.studio/visualisation/26397901/thumbnail" width="100%" alt="visualization" /></noscript></div>
+  <div class="nav-row">
+    <button class="btn btn-result" onclick="go('p-geo-result')">Результат</button>
+    <button class="btn btn-try" onclick="go('p-geo-try')">Попробовать</button>
+  </div>
+</div>
+
+<!-- ГЕО — Попробовать -->
+<div class="page" id="p-geo-try">
+  <div class="msg msg-t">
+    <span class="lbl-t">Учитель:</span> На уроках географии часто изучаем рейтинги стран по тому или иному показателю. Например, страны-лидеры по добыче нефти. Кажется, что ничего сложного, но учащиеся с неохотой эту информацию запоминают. Я хочу вместо обычных таблиц сделать запоминающиеся графики или диаграммы. Поможешь?
+  </div>
+  <div class="msg msg-a">
+    <span class="lbl-a">ИИ:</span> Попробуйте заменить таблицы на интерактивные графики
+  </div>
+  <div class="msg msg-t">
+    <span class="lbl-t">Учитель:</span> Это долго, нет на это времени. Есть вариант проще?
+  </div>
+  <div class="msg msg-a">
+    <span class="lbl-a">ИИ:</span> Это можно сделать быстро. Давай, попробуем
+  </div>
+
+  <div class="download-section">
+    <a class="download-btn" id="dl-oil" download="Добыча нефти.csv" href="data:text/csv;charset=utf-8;base64,77u/0KHRgtGA0LDQvdCwLNCU0L7QsdGL0YfQsCDQvdC10YTRgtC4IDIwMjMgKNC80LvQvSDRgtC+0L3QvSkK0KHQqNCQLDgyNy4xCtCg0L7RgdGB0LjRjyw1NDEuNwrQodCw0YPQtNC+0LLRgdC60LDRjyDQkNGA0LDQstC40Y8sNTMzLjcK0JrQsNC90LDQtNCwLDI3Ny45CtCY0YDQsNC6LDIxNC4zCtCe0JDQrSwxNzYuMQrQmNGA0LDQvSwyMTMK0JrQuNGC0LDQuSwyMDkK0JHRgNCw0LfQuNC70LjRjywxODMuNwrQmtGD0LLQtdC50YIsMTM5LjgK0JzQtdC60YHQuNC60LAsMTAyLjUK0J3QvtGA0LLQtdCz0LjRjyw5NC43CtCa0LDQt9Cw0YXRgdGC0LDQvSw4NC4yCtCa0LDRgtCw0YAsNzQuMQrQndC40LPQtdGA0LjRjyw3My45Cg==">
+      <span class="download-icon">⬇</span>
+      <span class="download-text">
+        Скачайте файл "Добыча нефти"
+        <small>и создайте свой график или диаграмму</small>
+      </span>
+    </a>
+    <a href="https://flourish.studio" target="_blank" class="flourish-img-card">
+    <img src="img/kom54.png">
+   </a>
+  </div>
+
+  <div class="nav-row">
+    <button class="btn btn-home" onclick="go('p0')">На главную</button>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════
+     JS — навигация
+══════════════════════════════════════ -->
+<script>
+function go(id) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  var target = document.getElementById(id);
+  if (target) {
+    target.classList.add('active');
+    window.scrollTo({top: 0, behavior: 'smooth'});
+  }
+}
+</script>
+
+</body>
+</html>

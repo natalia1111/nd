@@ -1,0 +1,907 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ИИ для учителей - Визуализация</title>
+    <style>
+        /* ===== RESET ===== */
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        /* ===== BASE ===== */
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f5f5f5;
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .page {
+            display: none;
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border: 3px dashed #7c6cb0;
+            border-radius: 30px;
+            padding: 40px 40px 30px;
+            position: relative;
+        }
+
+        .page.active { display: block; }
+
+        /* ===== MESSAGES ===== */
+        .message-box {
+            border-radius: 15px;
+            padding: 15px 20px;
+            margin-bottom: 15px;
+            max-width: 90%;
+            font-size: 18px;
+            line-height: 1.5;
+        }
+        .teacher-msg { background-color: #e8e0f0; }
+        .teacher-msg .label { color: #d4a017; }
+        .ai-msg { background-color: #fef3d0; }
+        .ai-msg .label { color: #d4a017; }
+
+        .bold { font-weight: bold; }
+        .italic { font-style: italic; }
+
+        /* ===== BUTTONS ===== */
+        .btn {
+            display: inline-block;
+            padding: 12px 30px;
+            border-radius: 8px;
+            text-decoration: none;
+            font-size: 16px;
+            font-weight: 400;
+            cursor: pointer;
+            border: none;
+            transition: transform 0.2s, box-shadow 0.2s;
+            text-align: center;
+        }
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+        }
+        .btn-purple { background-color: #7c6cb0; color: white; width: min(524px, 100%); }
+        .btn-green  { background-color: #5bb89a; color: white; width: min(524px, 100%); }
+        .btn-yellow { background-color: #f5c842; color: #333;  width: min(524px, 100%); }
+        .btn-orange { background-color: #f5a442; color: white; }
+
+        /* Nav buttons — never overflow */
+        .btn-nav {
+            width: auto !important;
+            min-width: 140px;
+            max-width: 100%;
+            display: inline-block;
+            text-align: center;
+            padding: 12px 20px;
+        }
+
+        /* ===== CHOICE LIST ===== */
+        .choices {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+            margin-top: 40px;
+            margin-left: 50px;
+            width: fit-content;
+            max-width: 100%;
+        }
+        .choice-item {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        /* ===== NAVIGATION ===== */
+        /* Static flow — no absolute, works for all content heights */
+        .nav-bottom {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-top: 30px;
+            gap: 12px;
+            flex-wrap: wrap;
+        }
+        .nav-right { margin-left: auto; }
+
+        /* ===== PROMPT BOX ===== */
+        .prompt-box {
+            background: white;
+            border: 2px solid #333;
+            border-radius: 15px;
+            padding: 20px;
+            margin: 20px auto;
+            max-width: 800px;
+            position: relative;
+            word-break: break-word;
+        }
+        .prompt-box::before {
+            content: '';
+            position: absolute;
+            top: -15px; left: 30px;
+            border: 15px solid transparent;
+            border-bottom-color: #333;
+            border-top: none;
+        }
+        .prompt-box::after {
+            content: '';
+            position: absolute;
+            top: -12px; left: 32px;
+            border: 13px solid transparent;
+            border-bottom-color: white;
+            border-top: none;
+        }
+        .prompt-label {
+            text-align: center;
+            font-style: italic;
+            color: #666;
+            margin-bottom: 10px;
+            font-size: 14px;
+        }
+
+        /* ===== IMAGES ===== */
+        .images-row {
+            display: flex;
+            gap: 15px;
+            justify-content: center;
+            margin: 20px 0;
+            flex-wrap: wrap;
+        }
+        .images-row img {
+            max-height: 350px;
+            max-width: 100%;
+            width: auto;
+            border-radius: 8px;
+            object-fit: contain;
+        }
+        .cell-images {
+            display: flex;
+            gap: 30px;
+            justify-content: center;
+            margin: 30px 0;
+            flex-wrap: wrap;
+        }
+        .cell-image {
+            position: relative;
+            display: flex;
+            justify-content: center;
+            flex: 1 1 260px;
+            min-width: 0;
+        }
+        .cell-image img {
+            max-width: 100%;
+            width: 100%;
+            border-radius: 10px;
+        }
+
+        /* ===== COPILOT MOCK ===== */
+        .copilot-interface {
+            max-width: 800px;
+            margin: 0 auto;
+        }
+        .copilot-input {
+            background: #f8f4ee;
+            border: 1px solid #ddd;
+            border-radius: 25px;
+            padding: 15px 20px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+        .copilot-input input {
+            flex: 1 1 120px;
+            min-width: 0;
+            border: none;
+            background: transparent;
+            font-size: 16px;
+            outline: none;
+        }
+        .copilot-tag {
+            background: #ffe4d4;
+            color: #e57339;
+            padding: 5px 15px;
+            border-radius: 20px;
+            font-size: 14px;
+            white-space: nowrap;
+        }
+        .copilot-menu {
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.1);
+            padding: 5px;
+            max-width: 400px;
+            width: 100%;
+        }
+        .copilot-menu-item {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            padding: 12px 15px;
+            cursor: pointer;
+            border-radius: 8px;
+            transition: background 0.2s;
+        }
+        .copilot-menu-item:hover { background: #f5f5f5; }
+        .copilot-menu-item .icon { width: 24px; height: 24px; opacity: 0.7; }
+        .copilot-menu-item .badge {
+            background: #e0e0e0;
+            color: #666;
+            padding: 2px 10px;
+            border-radius: 10px;
+            font-size: 12px;
+            margin-left: auto;
+        }
+
+        /* ===== COPY SECTION ===== */
+        .copy-section {
+            display: flex;
+            gap: 30px;
+            margin-top: 30px;
+            align-items: flex-start;
+            flex-wrap: wrap;
+        }
+        .copy-box {
+            display: flex;
+            gap: 15px;
+            align-items: flex-start;
+            flex: 1 1 250px;
+            min-width: 0;
+        }
+        .copy-icon {
+            width: 50px;
+            height: 60px;
+            border: 2px solid #ff6b6b;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #ff6b6b;
+            font-size: 24px;
+            flex-shrink: 0;
+            cursor: pointer;
+        }
+        .copy-icon:hover { background: #fff0f0; }
+        .copy-text { flex: 1; min-width: 0; }
+        .copy-text .hint {
+            color: #ff6b6b;
+            font-size: 13px;
+            font-style: italic;
+            margin-bottom: 10px;
+        }
+        .copilot-card {
+            background: #e5e6dc;
+            border-radius: 15px;
+            padding: 20px;
+            text-align: center;
+            width: min(250px, 100%);
+            text-decoration: none;
+            color: inherit;
+            display: block;
+            transition: transform 0.2s, box-shadow 0.2s;
+            flex-shrink: 0;
+        }
+        .copilot-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+        }
+        .copilot-card img { max-width: 150px; margin: 0 auto 10px; display: block; }
+        .copilot-card .title { font-size: 28px; font-weight: bold; color: #333; }
+        .copilot-card .subtitle { font-size: 12px; color: #666; margin-top: 10px; }
+
+        /* ===== MISC ===== */
+        .description {
+            text-align: center;
+            font-size: 14px;
+            font-style: italic;
+            color: #666;
+            margin: 20px auto;
+            max-width: 800px;
+        }
+        .typing-cursor {
+            border-right: 2px solid #333;
+            animation: blink-caret 0.75s step-end infinite;
+        }
+        @keyframes blink-caret {
+            from, to { border-color: transparent; }
+            50% { border-color: #333; }
+        }
+        .cta { display: inline-flex; align-items: center; gap: 6px; font-weight: 600; }
+        .hand {
+            display: inline-block;
+            transform-origin: 60% 50%;
+            animation: pulse 1.2s ease-in-out infinite;
+            font-size: 24px;
+        }
+        @keyframes pulse {
+            0%   { transform: scale(1);    opacity: 1;   }
+            50%  { transform: scale(1.25); opacity: 0.7; }
+            100% { transform: scale(1);    opacity: 1;   }
+        }
+        .image-card { text-align: center; max-width: 320px; margin: 0 auto; }
+        .image-card img { display: block; margin: 0 auto 10px; max-width: 100%; height: auto; }
+
+        /* Кнопка "На старт" — всегда компактная */
+        .btn-start {
+            display: inline-block !important;
+            width: auto !important;
+            max-width: fit-content !important;
+            padding: 10px 28px !important;
+            background-color: #b38bfa !important;
+            color: white !important;
+            margin-top: 30px;
+        }
+
+        /* ===== RESPONSIVE ===== */
+        @media (max-width: 900px) {
+            .choices { margin-left: 0; width: 100%; }
+            .btn-purple, .btn-green, .btn-yellow { width: 100%; }
+            .copy-section { flex-direction: column; }
+            .copy-text { max-width: 100%; }
+            .copilot-card { width: 100%; }
+            .images-row img { max-height: 260px; }
+            .prompt-box { margin: 15px 0; }
+        }
+
+        @media (max-width: 600px) {
+            body { padding: 8px; }
+            .page { padding: 16px 14px 20px; border-radius: 16px; }
+            .message-box { font-size: 15px; max-width: 100%; }
+            .nav-bottom { flex-direction: column; gap: 8px; }
+            .btn-nav { width: 100% !important; }
+            .nav-right { margin-left: 0; }
+            .images-row { flex-direction: column; align-items: center; }
+            .images-row img { max-height: 220px; width: 100%; object-fit: contain; }
+            .cell-images { flex-direction: column; gap: 15px; }
+            .copilot-interface { margin-top: 0 !important; }
+            .copilot-input { padding: 10px 12px; gap: 6px; }
+            .copilot-input input { font-size: 14px; }
+            .copilot-tag { font-size: 12px; padding: 4px 10px; }
+            .copilot-menu { max-width: 100%; }
+            .copy-icon { width: 44px; height: 44px; font-size: 20px; }
+            .prompt-box { padding: 12px 14px; font-size: 14px; margin: 10px 0; }
+            .choices { margin-top: 20px; }
+        }
+
+        @media (max-width: 400px) {
+            body { padding: 5px; }
+            .page { padding: 12px 10px 16px; border-radius: 12px; }
+            .message-box { font-size: 14px; padding: 10px 12px; }
+            .btn { font-size: 14px; padding: 10px 16px; }
+            .copilot-menu-item { padding: 10px 10px; gap: 10px; font-size: 14px; }
+        }
+    </style>
+</head>
+<body>
+
+<!-- ===== Page 1: Main Menu ===== -->
+<div class="page active" id="page1">
+    <div class="message-box teacher-msg">
+        <span class="label">Учитель:</span> У меня есть идея, но есть и проблема с <span class="bold italic">визуализацией</span> учебного материала
+
+    </div>
+
+    <div class="choices">
+        <div class="choice-item">
+            <a href="#" class="btn btn-purple" onclick="showPage(2); return false;">╰┈➤ˎˊ˗Это было с учителем химии</a>
+        </div>
+        <div class="choice-item">
+            <a href="#" class="btn btn-green" onclick="showPage(7); return false;">╰┈➤ˎˊ˗Это было с учителем биологии</a>
+        </div>
+        <div class="choice-item">
+            <a href="#" class="btn btn-yellow" onclick="showPage(12); return false;">╰┈➤ˎˊ˗Это было с учителем географии</a>
+						</div>
+<a href="../index.html" class="btn btn-start"> На старт </a>
+
+	       </div>
+</div>
+
+<!-- ===== ХИМИЯ: Строение атома ===== -->
+
+<!-- Page 2: Диалог учителя химии -->
+<div class="page" id="page2">
+    <div class="message-box teacher-msg">
+        <span class="label">Учитель:</span> Где найти изображение «Строение атома» без лишних подписей и на прозрачном фоне для удобного размещения на слайде презентации?
+    </div>
+
+    <div class="message-box ai-msg">
+        <span class="label">ИИ:</span> Я могу создать, что угодно. От тебя мне нужно лишь описание твоего изображения!
+    </div>
+
+    <div class="nav-bottom">
+        <a href="#" class="btn btn-purple btn-nav" onclick="showPage(1); return false;">На главную</a>
+        <a href="#" class="btn btn-purple btn-nav nav-right" onclick="showPage(3); return false;">Продолжение</a>
+    </div>
+</div>
+
+<!-- Page 3: Copilot Interface (Химия) -->
+<div class="page" id="page3">
+    <div class="copilot-interface" style="margin-top: 40px;">
+        <div class="copilot-input">
+            <span class="cta"><span class="hand" aria-hidden="true">👉</span></span>
+            <span style="font-size: 20px;">+</span>
+            <input type="text" placeholder="Сообщение для Copilot">
+            <span class="copilot-tag">✕ Smart (GPT-5)</span>
+        </div>
+    </div>
+
+    <div class="nav-bottom">
+        <a href="#" class="btn btn-purple btn-nav" onclick="showPage(1); return false;">На главную</a>
+        <a href="#" class="btn btn-purple btn-nav nav-right" onclick="showPage(4); return false;">Продолжение</a>
+    </div>
+</div>
+
+<!-- Page 4: Copilot Menu (Химия) -->
+<div class="page" id="page4">
+    <div class="copilot-interface" style="margin-top: 40px;">
+        <div style="position: relative;">
+            <div class="copilot-menu">
+                <div class="copilot-menu-item">
+                    <span class="cta"><span class="hand" aria-hidden="true">👉</span></span>
+                    <span>Сгенерировать изображение</span>
+                </div>
+                <div class="copilot-menu-item">
+                    <span class="icon">🔍</span>
+                    <span>Начать углубленное исследование</span>
+                </div>
+                <div class="copilot-menu-item">
+                    <span>🎧</span>
+                    <span>Создать подкаст</span>
+                </div>
+                <div class="copilot-menu-item">
+                    <span class="icon">📝</span>
+                    <span>Начать тест</span>
+                </div>
+                <div class="copilot-menu-item">
+                    <span class="icon">🔗</span>
+                    <span>Использовать соединители</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="copilot-input" style="margin-top: 20px;">
+            <span style="font-size: 20px;">+</span>
+            <input type="text" placeholder="Сообщение для Copilot">
+            <span class="copilot-tag">✕ Smart (GPT-5)</span>
+        </div>
+    </div>
+
+    <div class="nav-bottom">
+        <a href="#" class="btn btn-purple btn-nav" onclick="showPage(1); return false;">На главную</a>
+        <a href="#" class="btn btn-purple btn-nav nav-right" onclick="showPage(5); return false;">Продолжение</a>
+    </div>
+</div>
+
+<!-- Page 5: Результат - Атом (с анимацией печатной машинки) -->
+<div class="page" id="page5">
+    <p class="prompt-label">Необходимо ввести запрос (промпт)</p>
+
+    <div class="prompt-box">
+        <span id="typing-prompt-atom"></span><span id="typing-cursor-atom" class="typing-cursor">&nbsp;</span>
+    </div>
+
+    <div class="images-row">
+        <img src="img/kom10.png">
+    </div>
+
+    <p class="description">
+        Готово! Вот изображение, отражающее современное представление о строении атома — с ядром из протонов и нейтронов и орбитами, по которым движутся электроны. Белый фон и отсутствие подписей делают его идеальным для школьных заданий, презентаций или интерактивных обсуждений
+    </p>
+
+    <div class="nav-bottom">
+        <a href="#" class="btn btn-purple btn-nav" onclick="showPage(1); return false;">На главную</a>
+        <a href="#" class="btn btn-purple btn-nav nav-right" onclick="showPage(6); return false;">Попробовать</a>
+    </div>
+</div>
+
+<!-- Page 6: Копирование промта для атома -->
+<div class="page" id="page6">
+    <div class="message-box teacher-msg">
+        <span class="label">Учитель:</span> Где найти изображение «Строение атома» без лишних подписей и на прозрачном фоне для удобного размещения на слайде презентации?
+    </div>
+
+    <div class="message-box ai-msg">
+        <span class="label">ИИ:</span> Я могу создать, что угодно. От тебя мне нужно лишь описание твоего изображения!
+    </div>
+
+    <div class="copy-section">
+        <div class="copy-box">
+            <div class="copy-icon" onclick="copyText('prompt-atom')" style="cursor:pointer;">📋</div>
+            <div class="copy-text">
+                <p class="hint">Скопируй этот текст и попробуй создать изображение</p>
+                <p id="prompt-atom">Привет! Ты сегодня дизайнер изображений для учащихся. Сгенерируй изображение, в котором будет отражено современное понимание о строении атома. Изображение должно быть на прозрачном фоне png, без подписей</p>
+            </div>
+        </div>
+
+        <a href="https://copilot.microsoft.com" target="_blank" class="copilot-card">
+            <span class="cta"><span class="hand" aria-hidden="true">👉</span></span>
+			<img src="img/kom9.png">
+          
+            </a>
+    </div>
+
+    <div class="nav-bottom">
+        <a href="#" class="btn btn-purple btn-nav" onclick="showPage(1); return false;">На главную</a>
+    </div>
+</div>
+
+<!-- ===== БИОЛОГИЯ: Клетка ===== -->
+
+<!-- Page 7: Диалог учителя биологии -->
+<div class="page" id="page7">
+    <div class="message-box teacher-msg">
+        <span class="label">Учитель:</span> Как объяснить детям, что клетки — это не просто точки?
+    </div>
+
+    <div class="message-box ai-msg">
+        <span class="label">ИИ:</span> А если представить их как города? С митохондриями — электростанциями, ядром — мэрией?
+    </div>
+
+    <div class="message-box teacher-msg">
+        <span class="label">Учитель:</span> А можешь нарисовать?
+    </div>
+
+    <div class="message-box ai-msg">
+        <span class="label">ИИ:</span> Конечно. Город-клетка с улицами, фабриками и центром управления
+    </div>
+
+    <div class="nav-bottom">
+        <a href="#" class="btn btn-purple btn-nav" onclick="showPage(1); return false;">На главную</a>
+        <a href="#" class="btn btn-purple btn-nav nav-right" onclick="showPage(8); return false;">Продолжение</a>
+    </div>
+</div>
+
+<!-- Page 8: Copilot Interface (Биология) -->
+<div class="page" id="page8">
+    <div class="copilot-interface" style="margin-top: 40px;">
+        <div class="copilot-input">
+            <span class="cta"><span class="hand" aria-hidden="true">👉</span></span>
+            <span style="font-size: 20px;">+</span>
+            <input type="text" placeholder="Сообщение для Copilot">
+            <span class="copilot-tag">✕ Smart (GPT-5)</span>
+        </div>
+    </div>
+
+    <div class="nav-bottom">
+        <a href="#" class="btn btn-purple btn-nav" onclick="showPage(1); return false;">На главную</a>
+        <a href="#" class="btn btn-purple btn-nav nav-right" onclick="showPage(9); return false;">Продолжение</a>
+    </div>
+</div>
+
+<!-- Page 9: Copilot Menu (Биология) -->
+<div class="page" id="page9">
+    <div class="copilot-interface" style="margin-top: 40px;">
+        <div style="position: relative;">
+            <div class="copilot-menu">
+                <div class="copilot-menu-item">
+                    <span class="cta"><span class="hand" aria-hidden="true">👉</span></span>
+                    <span>Сгенерировать изображение</span>
+                </div>
+                <div class="copilot-menu-item">
+                    <span class="icon">🔍</span>
+                    <span>Начать углубленное исследование</span>
+                </div>
+                <div class="copilot-menu-item">
+                    <span>🎧</span>
+                    <span>Создать подкаст</span>
+                </div>
+                <div class="copilot-menu-item">
+                    <span class="icon">📝</span>
+                    <span>Начать тест</span>
+                </div>
+                <div class="copilot-menu-item">
+                    <span class="icon">🔗</span>
+                    <span>Использовать соединители</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="copilot-input" style="margin-top: 20px;">
+            <span style="font-size: 20px;">+</span>
+            <input type="text" placeholder="Сообщение для Copilot">
+            <span class="copilot-tag">✕ Smart (GPT-5)</span>
+        </div>
+    </div>
+
+    <div class="nav-bottom">
+        <a href="#" class="btn btn-purple btn-nav" onclick="showPage(1); return false;">На главную</a>
+        <a href="#" class="btn btn-purple btn-nav nav-right" onclick="showPage(10); return false;">Продолжение</a>
+    </div>
+</div>
+
+<!-- Page 10: Результат - Клетка (с анимацией печатной машинки) -->
+<div class="page" id="page10">
+    <p class="prompt-label">Необходимо ввести запрос (промпт)</p>
+
+    <div class="prompt-box">
+        <span id="typing-prompt-cell"></span><span id="typing-cursor-cell" class="typing-cursor">&nbsp;</span>
+    </div>
+
+    <div class="images-row">
+        <img src="img/kom8.png">
+    </div>
+
+    <div class="nav-bottom">
+        <a href="#" class="btn btn-purple btn-nav" onclick="showPage(1); return false;">На главную</a>
+        <a href="#" class="btn btn-purple btn-nav nav-right" onclick="showPage(11); return false;">Попробовать</a>
+    </div>
+</div>
+
+<!-- Page 11: Копирование промта для клетки -->
+<div class="page" id="page11">
+    <div class="message-box teacher-msg">
+        <span class="label">Учитель:</span> Как объяснить детям, что клетки — это не просто точки?
+    </div>
+
+    <div class="message-box ai-msg">
+        <span class="label">ИИ:</span> А если представить их как города? С митохондриями — электростанциями, ядром — мэрией?
+    </div>
+
+    <div class="message-box teacher-msg">
+        <span class="label">Учитель:</span> А можешь нарисовать?
+    </div>
+
+    <div class="message-box ai-msg">
+        <span class="label">ИИ:</span> Конечно. Город-клетка с улицами, фабриками и центром управления
+    </div>
+
+    <div class="copy-section">
+        <div class="copy-box">
+            <div class="copy-icon" onclick="copyText('prompt-cell')" style="cursor:pointer;">📋</div>
+            <div class="copy-text">
+                <p class="hint">Скопируй этот текст и попробуй создать изображение</p>
+                <p id="prompt-cell">Нарисуй растительную клетку как город. Митохондрии изобрази как электростанции, ядро — мэрией. В таком же стиле нарисуй и рибосомы, цитоплазму, аппарат гольджи, эндоплазматическую сеть, клеточную стенку. Не забывай про метафору. Соблюдай научный стиль. Надписи сделай на русском</p>
+            </div>
+        </div>
+
+        <a href="https://copilot.microsoft.com" target="_blank" class="copilot-card">
+            <span class="cta"><span class="hand" aria-hidden="true">👉</span></span>
+			<img src="img/kom9.png">
+          
+            </a>
+    </div>
+
+    <div class="nav-bottom">
+        <a href="#" class="btn btn-purple btn-nav" onclick="showPage(1); return false;">На главную</a>
+    </div>
+</div>
+
+<!-- ===== ГЕОГРАФИЯ: Почвенные горизонты ===== -->
+
+<!-- Page 12: Диалог учителя географии -->
+<div class="page" id="page12">
+    <div class="message-box teacher-msg">
+        <span class="label">Учитель:</span> Как продемонстрировать учащимся на уроке разные горизонты почвы?
+    </div>
+
+    <div class="message-box ai-msg">
+        <span class="label">ИИ:</span> Ты можешь использовать картинки и схемы; модели почвы (физические, слои в контейнере); видео и документальные фильмы; экскурсии
+    </div>
+
+    <div class="message-box teacher-msg">
+        <span class="label">Учитель:</span> А ты можешь нарисовать картинку горизонта почвы?
+    </div>
+
+    <div class="message-box ai-msg">
+        <span class="label">ИИ:</span> Конечно!
+    </div>
+
+    <div class="nav-bottom">
+        <a href="#" class="btn btn-purple btn-nav" onclick="showPage(1); return false;">На главную</a>
+        <a href="#" class="btn btn-purple btn-nav nav-right" onclick="showPage(13); return false;">Продолжение</a>
+    </div>
+</div>
+
+<!-- Page 13: Copilot Interface (География) -->
+<div class="page" id="page13">
+    <div class="copilot-interface" style="margin-top: 40px;">
+        <div class="copilot-input">
+            <span class="cta"><span class="hand" aria-hidden="true">👉</span></span>
+            <span style="font-size: 20px;">+</span>
+            <input type="text" placeholder="Сообщение для Copilot">
+            <span class="copilot-tag">✕ Smart (GPT-5)</span>
+        </div>
+    </div>
+
+    <div class="nav-bottom">
+        <a href="#" class="btn btn-purple btn-nav" onclick="showPage(1); return false;">На главную</a>
+        <a href="#" class="btn btn-purple btn-nav nav-right" onclick="showPage(14); return false;">Продолжение</a>
+    </div>
+</div>
+
+<!-- Page 14: Copilot Menu (География) -->
+<div class="page" id="page14">
+    <div class="copilot-interface" style="margin-top: 40px;">
+        <div style="position: relative;">
+            <div class="copilot-menu">
+                <div class="copilot-menu-item">
+                    <span class="cta"><span class="hand" aria-hidden="true">👉</span></span>
+                    <span>Сгенерировать изображение</span>
+                </div>
+                <div class="copilot-menu-item">
+                    <span class="icon">🔍</span>
+                    <span>Начать углубленное исследование</span>
+                </div>
+                <div class="copilot-menu-item">
+                    <span>🎧</span>
+                    <span>Создать подкаст</span>
+                </div>
+                <div class="copilot-menu-item">
+                    <span class="icon">📝</span>
+                    <span>Начать тест</span>
+                </div>
+                <div class="copilot-menu-item">
+                    <span class="icon">🔗</span>
+                    <span>Использовать соединители</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="copilot-input" style="margin-top: 20px;">
+            <span style="font-size: 20px;">+</span>
+            <input type="text" placeholder="Сообщение для Copilot">
+            <span class="copilot-tag">✕ Smart (GPT-5)</span>
+        </div>
+    </div>
+
+    <div class="nav-bottom">
+        <a href="#" class="btn btn-purple btn-nav" onclick="showPage(1); return false;">На главную</a>
+        <a href="#" class="btn btn-purple btn-nav nav-right" onclick="showPage(15); return false;">Продолжение</a>
+    </div>
+</div>
+
+<!-- Page 15: Результат - Почва (с анимацией печатной машинки) -->
+<div class="page" id="page15">
+    <p class="prompt-label">Необходимо ввести запрос (промт)</p>
+
+    <div class="prompt-box">
+        <span id="typing-prompt-soil"></span><span id="typing-cursor-soil" class="typing-cursor">&nbsp;</span>
+    </div>
+
+    <div class="images-row">
+       <img src="img/kom11.png">
+    </div>
+
+    <p class="description">
+        Вот изображение, которое иллюстрирует горизонты почвы — от верхнего слоя с растительностью до материнской породы. Оно выполнено на белом фоне и без подписей, идеально подходит для учебных заданий, обсуждений или самостоятельного аннотирования учащимися
+    </p>
+
+    <div class="nav-bottom">
+        <a href="#" class="btn btn-purple btn-nav" onclick="showPage(1); return false;">На главную</a>
+        <a href="#" class="btn btn-purple btn-nav nav-right" onclick="showPage(16); return false;">Попробовать</a>
+    </div>
+</div>
+
+<!-- Page 16: Копирование промта для почвы -->
+<div class="page" id="page16">
+    <div class="message-box teacher-msg">
+        <span class="label">Учитель:</span> Как продемонстрировать учащимся на уроке разные горизонты почвы?
+    </div>
+
+    <div class="message-box ai-msg">
+        <span class="label">ИИ:</span> Ты можешь использовать картинки и схемы; модели почвы (физические, слои в контейнере); видео и документальные фильмы; экскурсии
+    </div>
+
+    <div class="message-box teacher-msg">
+        <span class="label">Учитель:</span> А ты можешь нарисовать картинку горизонта почвы?
+    </div>
+
+    <div class="message-box ai-msg">
+        <span class="label">ИИ:</span> Конечно!
+    </div>
+
+    <div class="copy-section">
+        <div class="copy-box">
+            <div class="copy-icon" onclick="copyText('prompt-soil')" style="cursor:pointer;">📋</div>
+            <div class="copy-text">
+                <p class="hint">Скопируй этот текст и попробуй создать изображение</p>
+                <p id="prompt-soil">Я учитель географии и мне нужна картинка «Почвенные горизонты». Нарисуй такое изображение на белом фоне png, без подписей</p>
+            </div>
+        </div>
+
+        <a href="https://copilot.microsoft.com" target="_blank" class="copilot-card">
+            <span class="cta"><span class="hand" aria-hidden="true">👉</span></span>
+			<img src="img/kom9.png">
+          
+            </a>
+    </div>
+
+    <div class="nav-bottom">
+        <a href="#" class="btn btn-purple btn-nav" onclick="showPage(1); return false;">На главную</a>
+    </div>
+</div>
+
+<script>
+    // Тексты для анимации печатной машинки
+    const prompts = {
+        atom: "Привет! Ты сегодня дизайнер изображений для учащихся. Сгенерируй изображение, в котором будет отражено современное понимание о строении атома. Изображение должно быть на прозрачном фоне png, без подписей",
+        cell: "Нарисуй растительную клетку как город. Митохондрии изобрази как электростанции, ядро — мэрией. В таком же стиле нарисуй и рибосомы, цитоплазму, аппарат Гольджи, эндоплазматическую сеть, клеточную стенку. Не забывай про метафору. Соблюдай научный стиль. Надписи сделай на русском",
+        soil: "Я учитель географии и мне нужна картинка «Почвенные горизонты». Нарисуй такое изображение на белом фоне png, без подписей"
+    };
+
+    const typingState = {
+        atom: { index: 0, interval: null },
+        cell: { index: 0, interval: null },
+        soil: { index: 0, interval: null }
+    };
+
+    function typePrompt(type) {
+        const typingElement = document.getElementById('typing-prompt-' + type);
+        const cursorElement = document.getElementById('typing-cursor-' + type);
+        const state = typingState[type];
+        const text = prompts[type];
+
+        if (state.index < text.length) {
+            typingElement.textContent += text.charAt(state.index);
+            state.index++;
+        } else {
+            clearInterval(state.interval);
+            cursorElement.style.display = 'none';
+        }
+    }
+
+    function startTyping(type) {
+        const typingElement = document.getElementById('typing-prompt-' + type);
+        const cursorElement = document.getElementById('typing-cursor-' + type);
+        const state = typingState[type];
+
+        if (!typingElement || !cursorElement) return;
+
+        typingElement.textContent = '';
+        state.index = 0;
+        cursorElement.style.display = 'inline';
+
+        if (state.interval) {
+            clearInterval(state.interval);
+        }
+        state.interval = setInterval(() => typePrompt(type), 30);
+    }
+
+    function copyText(elementId) {
+        const text = document.getElementById(elementId).textContent;
+        navigator.clipboard.writeText(text).then(() => {
+            const icons = document.querySelectorAll('.copy-icon');
+            icons.forEach(icon => {
+                if (icon.getAttribute('onclick') && icon.getAttribute('onclick').includes(elementId)) {
+                    const original = icon.textContent;
+                    icon.textContent = '✅';
+                    setTimeout(() => { icon.textContent = original; }, 1500);
+                }
+            });
+        }).catch(() => {
+            // fallback для старых браузеров
+            const el = document.getElementById(elementId);
+            const range = document.createRange();
+            range.selectNode(el);
+            window.getSelection().removeAllRanges();
+            window.getSelection().addRange(range);
+            document.execCommand('copy');
+            window.getSelection().removeAllRanges();
+        });
+    }
+
+    function showPage(pageNum) {
+        // Hide all pages
+        document.querySelectorAll('.page').forEach(page => {
+            page.classList.remove('active');
+        });
+        // Show target page
+        document.getElementById('page' + pageNum).classList.add('active');
+        // Scroll to top
+        window.scrollTo(0, 0);
+
+        // Start typing animation for specific pages
+        if (pageNum === 5) {
+            startTyping('atom');
+        } else if (pageNum === 10) {
+            startTyping('cell');
+        } else if (pageNum === 15) {
+            startTyping('soil');
+        }
+    }
+</script>
+
+</body>
+</html>
