@@ -6,11 +6,7 @@
 <title>Аудиоконтент - НейроДиалог</title>
 <style>
 
-@keyframes blink {
-  0%   { color: #000; }
-  50%  { color: #ff0000; }
-  100% { color: #000; }
-}
+/* blink animation defined below */
 img { 
 max-width: 100%; 
 height: auto; 
@@ -350,6 +346,19 @@ transition: background 0.2s;
              flex-wrap: wrap;
       }
 
+       .audio-ctrl-row {
+           display: flex;
+           gap: 10px;
+           margin: 10px 0 6px;
+           flex-wrap: wrap;
+       }
+       .tts-btn.red {
+           background: #e55;
+           color: #fff;
+       }
+       .tts-btn.red:hover {
+           background: #c33;
+       }
        .tts-btn {
              padding: 10px 20px;
            border: none;
@@ -534,22 +543,28 @@ font-size: 2.5em;
         /* Трёхколоночный layout для кристаллов */
         .crystals-row {
            display: flex;
-             justify-content: space-around;
-            gap: 20px;
+           justify-content: space-around;
+           align-items: flex-start;
+           gap: 20px;
            margin: 30px 0;
            flex-wrap: wrap;
        }
 
        .crystal-card {
-            text-align: center;
-            flex: 1;
-            min-width: 200px;
+           text-align: center;
+           flex: 1 1 200px;
+           min-width: 180px;
+           max-width: 280px;
+           display: flex;
+           flex-direction: column;
+           align-items: center;
        }
 
         .crystal-card img {
              max-width: 200px;
              width: 100%;
-             margin-bottom: 15px;
+             margin-bottom: 10px;
+             display: block;
         }
 
         .crystal-formula {
@@ -895,12 +910,6 @@ font-weight: bold;
 
 	       </div>
 	</div>
-	       </div>
-	   
-    </div>
-
-	
- </div>
 
 <!-- ==================== СТРАНИЦА 2: Диалог биология ==================== -->
  <div id="page2" class="page">
@@ -982,7 +991,7 @@ font-weight: bold;
     }
   }
 
-  window.onload = type; // запуск при загрузке страницы
+  window.addEventListener('load', type); // запуск при загрузке страницы
 </script>
 
              <div class="tts-stats">Words: 346 | Lines: 1 | Blank Lines: 0</div>
@@ -995,7 +1004,7 @@ font-weight: bold;
               </div>
               <div class="tts-control-row">
                     <span class="tts-control-label">Голос</span>
-                   <span class="tts-control-value">DmitryNeural(Male)</span></span><span class="blink-hand">⏪</span>
+                   <span class="tts-control-value">DmitryNeural(Male)</span><span class="blink-hand">⏪</span>
                 </div>
               <div class="tts-control-row">
                     <span class="tts-control-label">Роль</span>
@@ -1017,8 +1026,9 @@ font-weight: bold;
 
            <div class="tts-buttons">
               <div class="tts-buttons">
-  <button class="tts-btn green" onclick="document.getElementById('komAudio').play()"></span><span class="blink-hand">&#128073</span>Играть в ▶</button>
+  <button class="tts-btn green" onclick="document.getElementById('komAudio').play()"><span class="blink-hand">&#128073;</span>Играть в ▶</button>
 </div>
+
 
 <audio id="komAudio">
     <source src="src/kom.mp3" type="audio/mpeg">
@@ -1026,28 +1036,26 @@ font-weight: bold;
 </audio>
 
 <script>
-const audio = document.getElementById('komAudio');
+const audioKom = document.getElementById('komAudio');
 
 // Остановка при скрытии вкладки (переход на другую страницу, переключение)
 document.addEventListener("visibilitychange", () => {
     if (document.hidden) {
-        audio.pause();
-        audio.currentTime = 0; // сброс к началу
+        audioKom.pause();
+        audioKom.currentTime = 0;
     }
 });
 
-// Дополнительно для мобильных браузеров и SPA
 window.addEventListener("pagehide", () => {
-    audio.pause();
-    audio.currentTime = 0;
+    audioKom.pause();
+    audioKom.currentTime = 0;
 });
 
-// Остановка при переходе по ссылкам
-const links = document.querySelectorAll('a');
-links.forEach(link => {
+const linksKom = document.querySelectorAll('a');
+linksKom.forEach(link => {
     link.addEventListener('click', () => {
-        audio.pause();
-        audio.currentTime = 0; // сброс к началу при передвижении к другой странице
+        audioKom.pause();
+        audioKom.currentTime = 0;
     });
 });
 </script>
@@ -1061,7 +1069,7 @@ links.forEach(link => {
        </div>
 
         <div class="continue-wrapper">
-            <a href="#" class="continue-btn" onclick="showPage(5); return false;">Продолжение</a>
+            <a href="#" class="continue-btn" onclick="(function(){var a=document.getElementById('komAudio');a.pause();a.currentTime=0;showPage(5);})(); return false;">Продолжение</a>
         </div>
     </div>
 </div>
@@ -1092,8 +1100,15 @@ links.forEach(link => {
              </div>
       </div>
 
+<audio id="komAudio_p5">
+    <source src="src/kom.mp3" type="audio/mpeg">
+</audio>
+<div class="audio-ctrl-row">
+  <button class="tts-btn green audio-start-btn" onclick="(function(){var a=document.getElementById('komAudio_p5');a.currentTime=0;a.play();})()"><span class="blink-hand">&#9654;</span> Старт аудио</button>
+  <button class="tts-btn red audio-stop-btn" onclick="(function(){var a=document.getElementById('komAudio_p5');a.pause();a.currentTime=0;})()">&#9632; Стоп</button>
+</div>
        <div class="continue-wrapper">
-             <a href="#" class="try-btn" onclick="showPage(7); return false;">Попробовать</a>
+             <a href="#" class="try-btn" onclick="(function(){var a=document.getElementById('komAudio_p5');a.pause();a.currentTime=0;showPage(7);})(); return false;">Попробовать</a>
          </div>
    </div>
  </div>
@@ -1254,7 +1269,7 @@ links.forEach(link => {
               </div>
               <div class="tts-control-row">
                     <span class="tts-control-label">Голос</span>
-                   <span class="tts-control-value">SvetlanaNeural(Female)</span></span><span class="blink-hand">⏪</span>
+                   <span class="tts-control-value">SvetlanaNeural(Female)</span><span class="blink-hand">⏪</span>
                 </div>
               <div class="tts-control-row">
                     <span class="tts-control-label">Роль</span>
@@ -1276,8 +1291,9 @@ links.forEach(link => {
 
            <div class="tts-buttons">
               <div class="tts-buttons">
-  <button class="tts-btn green" onclick="document.getElementById('komAudio1').play()"></span><span class="blink-hand">&#128073</span>Играть в ▶</button>
+  <button class="tts-btn green" onclick="document.getElementById('komAudio1').play()"><span class="blink-hand">&#128073;</span>Играть в ▶</button>
 </div>
+
 
 <audio id="komAudio1">
     <source src="src/kom2.mp3" type="audio/mpeg">
@@ -1285,28 +1301,28 @@ links.forEach(link => {
 </audio>
 
 <script>
-const audio = document.getElementById('komAudio1');
+const audioKom1 = document.getElementById('komAudio1');
 
-// Остановка при скрытии вкладки (переход на другую страницу, переключение)
+// Остановка при скрытии вкладки
 document.addEventListener("visibilitychange", () => {
     if (document.hidden) {
-        audio.pause();
-        audio.currentTime = 0; // сброс к началу
+        audioKom1.pause();
+        audioKom1.currentTime = 0;
     }
 });
 
 // Дополнительно для мобильных браузеров и SPA
 window.addEventListener("pagehide", () => {
-    audio.pause();
-    audio.currentTime = 0;
+    audioKom1.pause();
+    audioKom1.currentTime = 0;
 });
 
 // Остановка при переходе по ссылкам
-const links = document.querySelectorAll('a');
-links.forEach(link => {
+const linksKom1 = document.querySelectorAll('a');
+linksKom1.forEach(link => {
     link.addEventListener('click', () => {
-        audio.pause();
-        audio.currentTime = 0; // сброс к началу при передвижении к другой странице
+        audioKom1.pause();
+        audioKom1.currentTime = 0;
     });
 });
 </script>
@@ -1320,7 +1336,7 @@ links.forEach(link => {
        </div>
 
         <div class="continue-wrapper">
-            <a href="#" class="continue-btn" onclick="showPage(11); return false;">Продолжение</a>
+            <a href="#" class="continue-btn" onclick="(function(){var a=document.getElementById('komAudio1');a.pause();a.currentTime=0;showPage(11);})(); return false;">Продолжение</a>
         </div>
     </div>
 </div>
@@ -1348,9 +1364,17 @@ links.forEach(link => {
            </div>
        </div>
 
+<audio id="komAudio_p11">
+    <source src="src/kom2.mp3" type="audio/mpeg">
+</audio>
+<div class="audio-ctrl-row">
+  <button class="tts-btn green audio-start-btn" onclick="(function(){var a=document.getElementById('komAudio_p11');a.currentTime=0;a.play();})()"><span class="blink-hand">&#9654;</span> Старт аудио</button>
+  <button class="tts-btn red audio-stop-btn" onclick="(function(){var a=document.getElementById('komAudio_p11');a.pause();a.currentTime=0;})()">&#9632; Стоп</button>
+</div>
+
      <div class="continue-wrapper">
-           <a href="#" class="try-btn" onclick="showPage(13); return false;">Попробовать</a>
-		          </div>
+           <a href="#" class="try-btn" onclick="(function(){var a=document.getElementById('komAudio_p11');a.pause();a.currentTime=0;showPage(13);})(); return false;">Попробовать</a>
+     </div>
  </div>
  </div>
 
@@ -1570,7 +1594,7 @@ links.forEach(link => {
               </div>
               <div class="tts-control-row">
                     <span class="tts-control-label">Голос</span>
-                   <span class="tts-control-value">DmitryNeural(Male)</span></span><span class="blink-hand">⏪</span>
+                   <span class="tts-control-value">DmitryNeural(Male)</span><span class="blink-hand">⏪</span>
                 </div>
               <div class="tts-control-row">
                     <span class="tts-control-label">Роль</span>
@@ -1592,8 +1616,9 @@ links.forEach(link => {
 
            <div class="tts-buttons">
               <div class="tts-buttons">
- <button class="tts-btn green" onclick="document.getElementById('komAudio2').play()"></span><span class="blink-hand">&#128073</span>Играть в ▶</button>
+ <button class="tts-btn green" onclick="document.getElementById('komAudio2').play()"><span class="blink-hand">&#128073;</span>Играть в ▶</button>
 </div>
+
 
 <audio id="komAudio2">
     <source src="src/kom3.mp3" type="audio/mpeg">
@@ -1601,28 +1626,26 @@ links.forEach(link => {
 </audio>
 
 <script>
-const audio = document.getElementById('komAudio2');
+const audioKom2 = document.getElementById('komAudio2');
 
-// Остановка при скрытии вкладки (переход на другую страницу, переключение)
+// Остановка при скрытии вкладки
 document.addEventListener("visibilitychange", () => {
     if (document.hidden) {
-        audio.pause();
-        audio.currentTime = 0; // сброс к началу
+        audioKom2.pause();
+        audioKom2.currentTime = 0;
     }
 });
 
-// Дополнительно для мобильных браузеров и SPA
 window.addEventListener("pagehide", () => {
-    audio.pause();
-    audio.currentTime = 0;
+    audioKom2.pause();
+    audioKom2.currentTime = 0;
 });
 
-// Остановка при переходе по ссылкам
-const links = document.querySelectorAll('a');
-links.forEach(link => {
+const linksKom2 = document.querySelectorAll('a');
+linksKom2.forEach(link => {
     link.addEventListener('click', () => {
-        audio.pause();
-        audio.currentTime = 0; // сброс к началу при передвижении к другой странице
+        audioKom2.pause();
+        audioKom2.currentTime = 0;
     });
 });
 </script>
@@ -1637,7 +1660,7 @@ links.forEach(link => {
        </div>
 
         <div class="continue-wrapper">
-            <a href="#" class="continue-btn" onclick="showPage(17); return false;">Продолжение</a>
+            <a href="#" class="continue-btn" onclick="(function(){var a=document.getElementById('komAudio2');a.pause();a.currentTime=0;showPage(17);})(); return false;">Продолжение</a>
         </div>
     </div>
 </div>
@@ -1669,9 +1692,15 @@ links.forEach(link => {
          <p><span class="volcano-term">Вулкан</span> — возвышенность (чаще всего гора конусообразной формы), возникающая над каналами и трещинами в земной коре, по которым на земную поверхность извергаются лава, пепел, горячие газы, пары воды и обломки горных пород</p>
        </div>
 
+<audio id="komAudio_p17">
+    <source src="src/kom3.mp3" type="audio/mpeg">
+</audio>
+<div class="audio-ctrl-row">
+  <button class="tts-btn green audio-start-btn" onclick="(function(){var a=document.getElementById('komAudio_p17');a.currentTime=0;a.play();})()"><span class="blink-hand">&#9654;</span> Старт аудио</button>
+  <button class="tts-btn red audio-stop-btn" onclick="(function(){var a=document.getElementById('komAudio_p17');a.pause();a.currentTime=0;})()">&#9632; Стоп</button>
+</div>
       <div class="continue-wrapper">
-         <a href="#" class="try-btn" onclick="showPage(19); return false;">Попробовать</a>
-		 
+         <a href="#" class="try-btn" onclick="(function(){var a=document.getElementById('komAudio_p17');a.pause();a.currentTime=0;showPage(19);})(); return false;">Попробовать</a>
       </div>
     </div>
  </div>
@@ -1713,6 +1742,7 @@ links.forEach(link => {
        
      </div>
  	   <a href="#" class="try-btn" onclick="showPage(1); return false;">На главную</a>
+</div>
 </div>
 
  <script>
