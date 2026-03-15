@@ -2051,9 +2051,17 @@ flex-shrink: 0;
                 </div>
             </div>
 
-            <button onclick="showPoeModal('bio-prompt')" class="poe-card" style="border:none;cursor:pointer;background:inherit;padding:0;text-align:center;"><span>App-Creator</span>
-			<img src="img/kom22.png" style="max-width: 150px; border-radius: 10px;">
-			<span class="hand">👈</span></button> 
+            <div class="poe-card" style="background:inherit;padding:0;text-align:center;flex-direction:column;align-items:center;gap:6px;">
+				<span>App-Creator</span>
+				<img src="img/kom22.png" style="max-width: 150px; border-radius: 10px;">
+				<span class="hand">👈</span>
+				<button onclick="copyUrlAndPrompt('bio-prompt')" id="bio-copy-url-btn"
+				  style="margin-top:8px;background:#7c4dff;color:white;border:none;border-radius:10px;padding:10px 18px;font-size:14px;cursor:pointer;transition:all 0.2s;">
+				  📋 Скопировать ссылку и текст
+				</button>
+				<div style="font-size:13px;color:#ff6b6b;font-style:italic;margin-top:4px;">Скопируй это и вставь в браузер</div>
+				<div id="bio-url-status" style="font-size:12px;color:#555;min-height:18px;margin-top:2px;"></div>
+            </div>
             
         </div>
 
@@ -2533,9 +2541,17 @@ flex-shrink: 0;
                 </div>
             </div>
 
-            <button onclick="showPoeModal('geo-prompt')" class="poe-card" style="border:none;cursor:pointer;background:inherit;padding:0;text-align:center;"><span>App-Creator</span>
-			<img src="img/kom22.png" style="max-width: 150px; border-radius: 10px;">
-			<span class="hand">👈</span></button> 
+            <div class="poe-card" style="background:inherit;padding:0;text-align:center;flex-direction:column;align-items:center;gap:6px;">
+				<span>App-Creator</span>
+				<img src="img/kom22.png" style="max-width: 150px; border-radius: 10px;">
+				<span class="hand">👈</span>
+				<button onclick="copyUrlAndPrompt('geo-prompt')" id="geo-copy-url-btn"
+				  style="margin-top:8px;background:#7c4dff;color:white;border:none;border-radius:10px;padding:10px 18px;font-size:14px;cursor:pointer;transition:all 0.2s;">
+				  📋 Скопировать ссылку и текст
+				</button>
+				<div style="font-size:13px;color:#ff6b6b;font-style:italic;margin-top:4px;">Скопируй это и вставь в браузер</div>
+				<div id="geo-url-status" style="font-size:12px;color:#555;min-height:18px;margin-top:2px;"></div>
+            </div> 
             
         </div>
 
@@ -2718,6 +2734,50 @@ function copyAndOpenPoe() {
 document.getElementById('poeModal').addEventListener('click', function(e) {
     if (e.target === this) this.style.display = 'none';
 });
+
+// Копирование ссылки + текста промта (без перехода)
+function copyUrlAndPrompt(promptId) {
+    var poeUrl = 'https://poe.com/App-Creator';
+    var promptText = '';
+    var el = document.getElementById(promptId);
+    if (el) promptText = el.textContent.trim();
+
+    var combined = poeUrl + '\n\n' + promptText;
+
+    // Определяем prefix для статус-блока
+    var prefix = promptId.replace('-prompt', '');
+    var statusEl = document.getElementById(prefix + '-url-status');
+
+    function showSuccess() {
+        if (statusEl) statusEl.innerHTML = '✅ Ссылка и текст скопированы!';
+        setTimeout(function() { if (statusEl) statusEl.innerHTML = ''; }, 2500);
+    }
+
+    try {
+        if (navigator.clipboard && window.isSecureContext) {
+            navigator.clipboard.writeText(combined).then(showSuccess).catch(function() {
+                fallbackCopy(combined, showSuccess);
+            });
+        } else {
+            fallbackCopy(combined, showSuccess);
+        }
+    } catch(e) {
+        if (statusEl) statusEl.innerHTML = '⚠️ Скопируйте вручную: ' + poeUrl;
+    }
+}
+
+function fallbackCopy(text, callback) {
+    var ta = document.createElement('textarea');
+    ta.value = text;
+    ta.style.position = 'fixed';
+    ta.style.opacity = '0';
+    document.body.appendChild(ta);
+    ta.focus();
+    ta.select();
+    try { document.execCommand('copy'); } catch(e) {}
+    document.body.removeChild(ta);
+    if (callback) callback();
+}
 </script>
 
 </body>
