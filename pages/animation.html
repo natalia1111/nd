@@ -2051,17 +2051,9 @@ flex-shrink: 0;
                 </div>
             </div>
 
-            <div class="poe-card" style="background:inherit;padding:0;text-align:center;flex-direction:column;align-items:center;gap:6px;">
-				<span>App-Creator</span>
-				<img src="img/kom22.png" style="max-width: 150px; border-radius: 10px;">
-				<span class="hand">👈</span>
-				<button onclick="copyUrlAndPrompt('bio-prompt')" id="bio-copy-url-btn"
-				  style="margin-top:8px;background:#7c4dff;color:white;border:none;border-radius:10px;padding:10px 18px;font-size:14px;cursor:pointer;transition:all 0.2s;">
-				  📋 Скопировать ссылку и текст
-				</button>
-				<div style="font-size:13px;color:#ff6b6b;font-style:italic;margin-top:4px;">Скопируй это и вставь в браузер</div>
-				<div id="bio-url-status" style="font-size:12px;color:#555;min-height:18px;margin-top:2px;"></div>
-            </div>
+            <button onclick="showPoeModal('bio-prompt')" class="poe-card" style="border:none;cursor:pointer;background:inherit;padding:0;text-align:center;"><span>App-Creator</span>
+			<img src="img/kom22.png" style="max-width: 150px; border-radius: 10px;">
+			<span class="hand">👈</span></button>
             
         </div>
 
@@ -2541,17 +2533,9 @@ flex-shrink: 0;
                 </div>
             </div>
 
-            <div class="poe-card" style="background:inherit;padding:0;text-align:center;flex-direction:column;align-items:center;gap:6px;">
-				<span>App-Creator</span>
-				<img src="img/kom22.png" style="max-width: 150px; border-radius: 10px;">
-				<span class="hand">👈</span>
-				<button onclick="copyUrlAndPrompt('geo-prompt')" id="geo-copy-url-btn"
-				  style="margin-top:8px;background:#7c4dff;color:white;border:none;border-radius:10px;padding:10px 18px;font-size:14px;cursor:pointer;transition:all 0.2s;">
-				  📋 Скопировать ссылку и текст
-				</button>
-				<div style="font-size:13px;color:#ff6b6b;font-style:italic;margin-top:4px;">Скопируй это и вставь в браузер</div>
-				<div id="geo-url-status" style="font-size:12px;color:#555;min-height:18px;margin-top:2px;"></div>
-            </div> 
+            <button onclick="showPoeModal('geo-prompt')" class="poe-card" style="border:none;cursor:pointer;background:inherit;padding:0;text-align:center;"><span>App-Creator</span>
+			<img src="img/kom22.png" style="max-width: 150px; border-radius: 10px;">
+			<span class="hand">👈</span></button> 
             
         </div>
 
@@ -2658,17 +2642,18 @@ flex-shrink: 0;
     <div style="font-size:40px; margin-bottom:15px;">🤖</div>
     <h3 style="color:#7c4dff; margin-bottom:15px; font-size:20px;">Открыть Poe → App-Creator</h3>
     <p style="color:#555; margin-bottom:20px; line-height:1.5; font-size:15px;">
-      1. Нажмите <strong>«Скопировать и перейти»</strong><br>
+      1. Нажми <strong>«Скопировать»</strong><br>
       2. Текст скопируется автоматически<br>
-      3. Откроется браузер с ботом <strong>App-Creator</strong><br>
-      4. Вставьте скопированный текст
+      3. Открой браузер с ботом <strong>App-Creator</strong> (Poe → App-Creator)<br>
+      4. Вставь скопированный текст<br>
+      5. Начни чат
     </p>
     <div id="poeCopyStatus" style="background:#f0ebff; border-radius:10px; padding:12px; margin-bottom:20px; font-size:13px; color:#555;">
-      💡 Нажмите кнопку — текст скопируется и откроется Poe
+      💡 Нажми кнопку — текст скопируется
     </div>
-    <button onclick="copyAndOpenPoe()" 
+    <button onclick="copyAndOpenPoe()"
        style="display:block; width:100%; background:#7c4dff; color:white; padding:14px; border-radius:12px; border:none; font-size:16px; font-weight:bold; margin-bottom:12px; cursor:pointer;">
-      📋 Скопировать и перейти в Poe ↗
+      📋 Скопировать
     </button>
     <button onclick="document.getElementById('poeModal').style.display='none'" 
             style="background:#eee; border:none; padding:12px 30px; border-radius:12px; cursor:pointer; font-size:15px; width:100%;">
@@ -2683,7 +2668,7 @@ var _currentPromptId = null;
 
 function showPoeModal(promptId) {
     _currentPromptId = promptId || null;
-    document.getElementById('poeCopyStatus').innerHTML = '💡 Нажмите кнопку — текст скопируется и откроется Poe';
+    document.getElementById('poeCopyStatus').innerHTML = '💡 Нажмите кнопку — текст скопируется';
     document.getElementById('poeModal').style.display = 'flex';
 }
 
@@ -2694,20 +2679,17 @@ function copyAndOpenPoe() {
         if (el) text = el.textContent;
     }
 
-    function doRedirect() {
-        document.getElementById('poeModal').style.display = 'none';
-        // location.href открывает URL в том же окне — браузер перехватывает как внешнюю ссылку
-        window.location.href = 'https://clck.ru/3SYukv';
+    function showCopied() {
+        document.getElementById('poeCopyStatus').innerHTML = '✅ Текст скопирован! Теперь открой Poe → App-Creator и вставь текст';
     }
 
     if (text) {
         try {
             if (navigator.clipboard && window.isSecureContext) {
                 navigator.clipboard.writeText(text).then(function() {
-                    document.getElementById('poeCopyStatus').innerHTML = '✅ Текст скопирован! Переходим в Poe...';
-                    setTimeout(doRedirect, 800);
+                    showCopied();
                 }).catch(function() {
-                    doRedirect();
+                    fallbackCopy(text, showCopied);
                 });
             } else {
                 var ta = document.createElement('textarea');
@@ -2719,14 +2701,13 @@ function copyAndOpenPoe() {
                 ta.select();
                 document.execCommand('copy');
                 document.body.removeChild(ta);
-                document.getElementById('poeCopyStatus').innerHTML = '✅ Текст скопирован! Переходим в Poe...';
-                setTimeout(doRedirect, 800);
+                showCopied();
             }
         } catch(e) {
-            doRedirect();
+            document.getElementById('poeCopyStatus').innerHTML = '⚠️ Скопируй текст вручную';
         }
     } else {
-        doRedirect();
+        document.getElementById('poeCopyStatus').innerHTML = '⚠️ Нет текста для копирования';
     }
 }
 
@@ -2737,7 +2718,7 @@ document.getElementById('poeModal').addEventListener('click', function(e) {
 
 // Копирование ссылки + текста промта (без перехода)
 function copyUrlAndPrompt(promptId) {
-    var poeUrl = 'https://clck.ru/3SYukv';
+    var poeUrl = 'https://poe.com/App-Creator';
     var promptText = '';
     var el = document.getElementById(promptId);
     if (el) promptText = el.textContent.trim();
