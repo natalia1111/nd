@@ -1,0 +1,771 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Идентификатор объектов на основе ИИ</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: 'Segoe UI', Arial, sans-serif;
+            background: #f5f5f5;
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        /* ── PAGES ── */
+        .page { display: none; max-width: 1000px; margin: 0 auto; }
+        .page.active { display: block; }
+
+        .container {
+            border: 3px dashed #7c4dff;
+            border-radius: 20px;
+            padding: 40px;
+            background: white;
+            min-height: 400px;
+        }
+
+        /* ── MESSAGES ── */
+        .msg-teacher {
+            background: #e8e0f0;
+            border-radius: 15px;
+            padding: 15px 20px;
+            margin-bottom: 15px;
+            font-size: 15px;
+            line-height: 1.5;
+        }
+        .msg-ai {
+            background: #fff3cd;
+            border-radius: 15px;
+            padding: 15px 20px;
+            margin-bottom: 15px;
+            font-size: 15px;
+            line-height: 1.5;
+        }
+        .label { color: #7c4dff; font-weight: bold; }
+        .msg-ai .label { color: #e5a800; }
+        .label-bold { font-weight: bold; }
+
+        /* ── SPEECH BUBBLE ── */
+        .speech-bubble {
+            background: white;
+            border: 2px solid #333;
+            border-radius: 15px;
+            padding: 15px 25px;
+            margin: 15px 0;
+            position: relative;
+            font-size: 14px;
+            line-height: 1.6;
+        }
+        .speech-bubble::before {
+            content: '';
+            position: absolute;
+            bottom: -16px; left: 28px;
+            border-width: 16px 10px 0;
+            border-style: solid;
+            border-color: #333 transparent transparent;
+        }
+        .speech-bubble::after {
+            content: '';
+            position: absolute;
+            bottom: -13px; left: 30px;
+            border-width: 13px 8px 0;
+            border-style: solid;
+            border-color: white transparent transparent;
+        }
+
+        /* ── CHOICE BUTTONS (главная) ── */
+        .choice-buttons {
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+            margin-top: 32px;
+        }
+        .choice-btn {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 14px 24px;
+            border-radius: 12px;
+            color: white;
+            font-size: 16px;
+            font-weight: 500;
+            border: none;
+            cursor: pointer;
+            width: 100%;
+            max-width: 520px;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+        .choice-btn:hover { transform: scale(1.02); box-shadow: 0 4px 15px rgba(0,0,0,0.2); }
+        .choice-btn.purple { background: #9b7fdb; }
+        .choice-btn.green  { background: #5fc3a0; }
+        .choice-btn.yellow { background: #f5c842; color: #333; }
+
+        /* ── NAV BUTTONS ── */
+        .nav-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-top: 30px;
+            gap: 12px;
+            flex-wrap: wrap;
+        }
+        .nav-row.end   { justify-content: flex-end; }
+        .nav-row.start { justify-content: flex-start; }
+        .nav-row.center { justify-content: center; }
+
+        .btn {
+            display: inline-block;
+            padding: 11px 28px;
+            border-radius: 10px;
+            border: none;
+            cursor: pointer;
+            font-size: 15px;
+            font-weight: 500;
+            text-align: center;
+            text-decoration: none;
+            transition: opacity 0.2s, transform 0.1s;
+            white-space: nowrap;
+        }
+        .btn:hover { opacity: 0.85; transform: translateY(-1px); }
+
+        .btn-home     { background: #9b7fdb; color: white; }
+        .btn-continue { background: #9b7fdb; color: white; }
+        .btn-start    { background: #b38bfa; color: white; }
+        .btn-action   { background: #333;    color: white; }
+        .btn-outline  { background: white; color: #1a73e8; border: 1px solid #1a73e8; }
+
+        /* ── GOOGLE LENS ── */
+        .google-header { text-align: center; margin-bottom: 30px; }
+        .google-logo { font-size: 72px; font-weight: 400; }
+        .google-logo span:nth-child(1) { color: #4285f4; }
+        .google-logo span:nth-child(2) { color: #ea4335; }
+        .google-logo span:nth-child(3) { color: #fbbc05; }
+        .google-logo span:nth-child(4) { color: #4285f4; }
+        .google-logo span:nth-child(5) { color: #34a853; }
+        .google-logo span:nth-child(6) { color: #ea4335; }
+
+        .google-lens-box {
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.15);
+            padding: 30px;
+            max-width: 600px;
+            margin: 0 auto;
+            text-align: center;
+            position: relative;
+        }
+        .google-lens-title { font-size: 18px; color: #333; margin-bottom: 25px; }
+        .upload-area {
+            border: 2px dashed #ddd;
+            border-radius: 10px;
+            padding: 40px;
+            margin-bottom: 20px;
+            color: #666;
+        }
+        .or-divider { color: #999; margin: 20px 0; }
+        .url-input-row { display: flex; gap: 10px; }
+        .url-input {
+            flex: 1;
+            padding: 12px 15px;
+            border: 1px solid #ddd;
+            border-radius: 25px;
+            font-size: 14px;
+        }
+        .search-btn {
+            background: #f8f9fa;
+            border: 1px solid #ddd;
+            border-radius: 25px;
+            padding: 12px 25px;
+            cursor: pointer;
+            color: #666;
+        }
+        .close-btn {
+            position: absolute;
+            right: 15px; top: 15px;
+            font-size: 24px;
+            color: #999;
+            cursor: pointer;
+        }
+
+        /* ── GRASP ── */
+        .grasp-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 15px 0;
+            border-bottom: 1px solid #eee;
+            margin-bottom: 30px;
+            flex-wrap: wrap;
+            gap: 15px;
+        }
+        .grasp-logo { font-size: 28px; font-weight: bold; color: #333; }
+        .grasp-nav { display: flex; gap: 20px; align-items: center; flex-wrap: wrap; }
+        .grasp-nav a { color: #333; text-decoration: none; }
+        .grasp-nav .login-btn {
+            background: #333; color: white;
+            padding: 8px 20px; border-radius: 5px;
+        }
+        .tools-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+            gap: 25px;
+            margin: 30px 0;
+        }
+        .tool-card {
+            background: white;
+            border: 1px solid #eee;
+            border-radius: 15px;
+            padding: 25px;
+            text-align: center;
+            display: flex;
+            flex-direction: column;
+        }
+        .tool-icon { font-size: 36px; margin-bottom: 15px; }
+        .tool-title { font-size: 16px; font-weight: bold; margin-bottom: 10px; }
+        .tool-desc { color: #666; font-size: 14px; line-height: 1.5; margin-bottom: 20px; flex: 1; }
+        .tool-btn {
+            display: block;
+            background: #333; color: white;
+            padding: 12px 25px;
+            border-radius: 10px;
+            border: none;
+            cursor: pointer;
+            font-size: 14px;
+            width: 100%;
+        }
+
+        /* ── TABS ── */
+        .tabs-panel {
+            display: flex;
+            gap: 20px;
+            border-bottom: 1px solid #eee;
+            padding-bottom: 10px;
+            margin-bottom: 20px;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+        .tab { display: flex; align-items: center; gap: 8px; color: #666; cursor: pointer; padding: 5px 0; }
+        .tab.active { color: #1a73e8; border-bottom: 2px solid #1a73e8; }
+
+        /* ── UPLOAD ZONE ── */
+        .upload-zone {
+            border: 2px dashed #ddd;
+            border-radius: 15px;
+            padding: 60px 30px;
+            text-align: center;
+            background: #fafafa;
+        }
+        .upload-zone .plus { font-size: 48px; color: #1a73e8; margin-bottom: 15px; }
+
+        /* ── RESULT PANEL ── */
+        .result-tabs { display: flex; gap: 15px; margin-bottom: 20px; flex-wrap: wrap; align-items: center; }
+        .result-tab { padding: 5px 0; color: #666; cursor: pointer; font-size: 14px; }
+        .result-tab.active { color: #ea4335; font-weight: bold; }
+        .analysis-placeholder { text-align: center; color: #999; padding: 40px; }
+        .analyze-btn {
+            background: #333; color: white;
+            padding: 12px 25px; border-radius: 10px;
+            border: none; cursor: pointer; margin-top: 20px;
+        }
+
+        /* ── IMAGE GRID ── */
+        .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 30px; }
+        .image-thumbs { display: flex; gap: 10px; margin-bottom: 20px; flex-wrap: wrap; }
+        .image-thumb { width: 60px; height: 60px; border-radius: 8px; object-fit: cover; cursor: pointer; }
+        .image-thumb.placeholder {
+            background: linear-gradient(135deg, #a8e6cf, #88d4ab);
+            display: flex; align-items: center; justify-content: center;
+            color: white; font-weight: bold;
+        }
+        .image-thumb.placeholder:nth-child(2) { background: linear-gradient(135deg, #87ceeb, #6bb3d9); }
+        .image-thumb.placeholder:nth-child(3) { background: linear-gradient(135deg, #dda0dd, #c77dc7); }
+        .image-thumb.placeholder:nth-child(4) { background: linear-gradient(135deg, #f0e68c, #ddd06a); }
+        .image-thumb.placeholder:nth-child(5) { background: linear-gradient(135deg, #98fb98, #7be07b); }
+
+        /* ── IMAGE GALLERY ── */
+        .img-full {
+            width: 100%;
+            max-height: 380px;
+            object-fit: contain;
+            border-radius: 10px;
+            display: block;
+            margin: 0 auto 16px;
+        }
+        .img-arrow-wrap {
+            text-align: center;
+            margin-bottom: 10px;
+        }
+
+        /* ── FINAL ROW (биология-5 / география-5) ── */
+        .final-row {
+            display: flex;
+            gap: 24px;
+            align-items: flex-start;
+            margin-top: 24px;
+            flex-wrap: wrap;
+        }
+        .final-row > * { flex: 1; min-width: 160px; }
+        .copy-block { display: flex; gap: 10px; align-items: flex-start; }
+        .bookmark-icon { color: #ea4335; font-size: 24px; }
+        .copy-hint { font-size: 13px; color: #666; margin-bottom: 8px; }
+        .lens-link { display: flex; align-items: center; gap: 10px; text-decoration: none; }
+
+        /* ── BLINK ── */
+        .blink { animation: blink 1s infinite; }
+        @keyframes blink { 0%,100%{opacity:1;} 50%{opacity:0.3;} }
+
+        /* ── IMAGES ROW ── */
+        .images-row { display: flex; gap: 20px; align-items: center; flex-wrap: wrap; margin: 20px 0; }
+
+        /* ── RESPONSIVE ── */
+        @media (max-width: 700px) {
+            body { padding: 10px; }
+            .container { padding: 20px; }
+            .choice-btn { max-width: 100%; }
+            .two-col { grid-template-columns: 1fr; }
+            .google-logo { font-size: 48px; }
+            .tools-grid { grid-template-columns: 1fr; }
+            .final-row { flex-direction: column; }
+            .grasp-nav { gap: 12px; }
+            .nav-row { flex-direction: column; align-items: stretch; }
+            .btn { width: 100%; }
+            .choice-btn { max-width: 100%; }
+        }
+    </style>
+</head>
+<body>
+
+<!-- ==================== ГЛАВНАЯ ==================== -->
+<div class="page active" id="main">
+    <div class="container">
+        <div class="msg-teacher">
+            <span class="label">Учитель:</span> У меня есть идея, но есть и проблема с <span class="label-bold">идентификацией объекта</span>
+        </div>
+
+        <div class="choice-buttons">
+            <button class="choice-btn purple" onclick="showPage('chemistry-1')">
+                <span class="blink">╰┈➤ˎˊ˗</span> Это было с учителем химии
+            </button>
+            <button class="choice-btn green" onclick="showPage('biology-1')">
+                <span class="blink">╰┈➤ˎˊ˗</span> Это было с учителем биологии
+            </button>
+            <button class="choice-btn yellow" onclick="showPage('geography-1')">
+                <span class="blink">╰┈➤ˎˊ˗</span> Это было с учителем географии
+            </button>
+        </div>
+
+        <div class="nav-row start" style="margin-top:28px;">
+            <a href="../index.html" class="btn btn-start">На старт</a>
+        </div>
+    </div>
+</div>
+
+<!-- ==================== БИОЛОГИЯ 1 ==================== -->
+<div class="page" id="biology-1">
+    <div class="container">
+        <div class="msg-teacher"><span class="label">Учитель:</span> Во время написания НПК я с моим учащимся столкнулся со сложностью в определении видовой принадлежности изучаемых растительных объектов</div>
+        <div class="msg-ai"><span class="label">ИИ:</span> Существуют разные онлайн-определители, онлайн-ресурсы и приложения для определения видовой принадлежности, а также разработан идентификатор объектов на основе ИИ</div>
+        <div class="msg-teacher"><span class="label">Учитель:</span> А можешь подробнее рассказать про идентификатор объектов на основе ИИ</div>
+        <div class="msg-ai"><span class="label">ИИ:</span> Конечно!</div>
+
+        <div class="nav-row">
+            <button class="btn btn-home" onclick="showPage('main')">На главную</button>
+            <button class="btn btn-continue" onclick="showPage('biology-2')">Продолжение</button>
+        </div>
+    </div>
+</div>
+
+<!-- ==================== БИОЛОГИЯ 2 — Google Lens ==================== -->
+<div class="page" id="biology-2">
+    <div class="container">
+        <div class="google-header">
+            <div class="google-logo"><span>G</span><span>o</span><span>o</span><span>g</span><span>l</span><span>e</span></div>
+        </div>
+
+        <div class="google-lens-box">
+            <span class="close-btn">&times;</span>
+            <div class="google-lens-title">Ищите по изображениям с Google Объективом</div>
+            <div class="upload-area">
+                <div style="font-size:48px;opacity:.3;margin-bottom:15px;">🖼️</div>
+                <p>Перетащите изображение сюда или <span style="color:#1a73e8;text-decoration:underline;cursor:pointer;">загрузите файл</span>.</p>
+            </div>
+            <div class="or-divider">ИЛИ</div>
+            <div class="url-input-row">
+                <input type="text" class="url-input" placeholder="Вставьте ссылку на изображение">
+                <button class="search-btn" onclick="showPage('biology-3')">Найти <span class="blink">👈</span></button>
+            </div>
+        </div>
+
+        <div class="nav-row start" style="margin-top:24px;">
+            <button class="btn btn-home" onclick="showPage('main')">На главную</button>
+        </div>
+    </div>
+</div>
+
+<!-- ==================== БИОЛОГИЯ 3 — Результат ==================== -->
+<div class="page" id="biology-3">
+    <div class="container">
+        <img src="img/kom14.png" class="img-full" alt="Результат определения">
+        <div class="img-arrow-wrap">
+            <button class="blink" onclick="showPage('biology-4')"
+                style="font-size:36px;background:none;border:none;cursor:pointer;">👈</button>
+        </div>
+
+        <div class="nav-row start">
+            <button class="btn btn-home" onclick="showPage('main')">На главную</button>
+        </div>
+    </div>
+</div>
+
+<!-- ==================== БИОЛОГИЯ 4 — Описание ==================== -->
+<div class="page" id="biology-4">
+    <div class="container">
+        <p style="font-style:italic;margin-bottom:20px;">Необходимо загрузить исследуемое изображение в соответствующее поле</p>
+
+        <div class="speech-bubble" style="display:inline-block;">
+            <img src="img/kom15.png" style="max-width:280px;border-radius:10px;display:block;">
+        </div>
+
+        <p style="margin:12px 0 6px;"><strong>На изображении представлен василистник водосборолистный (Thalictrum aquilegiifolium)</strong></p>
+        <p style="margin-bottom:6px;">Это многолетнее травянистое декоративное растение, культивируемое с 1720 года.</p>
+        <p style="margin-bottom:6px;">Высота растения может достигать 1–1,5 метра.</p>
+        <p>Цветки мелкие, многочисленные, собраны в крупные щитковидные соцветия розовато-сиреневого цвета, напоминающие облака.</p>
+
+        <div class="nav-row">
+            <button class="btn btn-home" onclick="showPage('main')">На главную</button>
+            <button class="btn btn-continue" onclick="showPage('biology-5')">Попробовать</button>
+        </div>
+    </div>
+</div>
+
+<!-- ==================== БИОЛОГИЯ 5 — Финал ==================== -->
+<div class="page" id="biology-5">
+    <div class="container">
+        <div class="msg-teacher"><span class="label">Учитель:</span> Во время написания НПК я с моим учащимся столкнулся со сложностью в определении видовой принадлежности изучаемых растительных объектов</div>
+        <div class="msg-ai"><span class="label">ИИ:</span> Существуют разные онлайн-определители, онлайн-ресурсы и приложения для определения видовой принадлежности, а также разработан идентификатор объектов на основе ИИ</div>
+        <div class="msg-teacher"><span class="label">Учитель:</span> А можешь подробнее рассказать про идентификатор объектов на основе ИИ</div>
+        <div class="msg-ai"><span class="label">ИИ:</span> Конечно!</div>
+
+        <div class="final-row">
+            <div>
+                <button class="btn btn-home" onclick="showPage('main')">На главную</button>
+            </div>
+            <div class="copy-block">
+                <div class="bookmark-icon">📋</div>
+                <div>
+                    <p class="copy-hint">Сохрани изображение и попробуй определить видовую принадлежность</p>
+                    <img src="img/kom15.png" style="max-width:140px;border-radius:10px;display:block;">
+                </div>
+            </div>
+            <div>
+                <a href="https://lens.google.com/" class="lens-link" target="_blank">
+                    <img src="img/kom18.png" style="max-width:140px;border-radius:10px;">
+                    <span class="blink" style="font-size:28px;">👈</span>
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ==================== ГЕОГРАФИЯ 1 ==================== -->
+<div class="page" id="geography-1">
+    <div class="container">
+        <div class="msg-teacher"><span class="label">Учитель:</span> Я столкнулся со спутниковым снимком, однако не могу определить, какой конкретно объект на нем запечатлен. Как мне быть?</div>
+        <div class="msg-ai"><span class="label">ИИ:</span> Существуют разные онлайн-ресурсы и приложения для определения объектов, а также сейчас разработали идентификаторы объектов на основе ИИ</div>
+        <div class="msg-teacher"><span class="label">Учитель:</span> А можешь подробнее рассказать про идентификатор объектов на основе ИИ</div>
+        <div class="msg-ai"><span class="label">ИИ:</span> Конечно!</div>
+
+        <div class="nav-row">
+            <button class="btn btn-home" onclick="showPage('main')">На главную</button>
+            <button class="btn btn-continue" onclick="showPage('geography-2')">Продолжение</button>
+        </div>
+    </div>
+</div>
+
+<!-- ==================== ГЕОГРАФИЯ 2 — Google Lens ==================== -->
+<div class="page" id="geography-2">
+    <div class="container">
+        <div class="google-header">
+            <div class="google-logo"><span>G</span><span>o</span><span>o</span><span>g</span><span>l</span><span>e</span></div>
+        </div>
+
+        <div class="google-lens-box">
+            <span class="close-btn">&times;</span>
+            <div class="google-lens-title">Ищите по изображениям с Google Объективом</div>
+            <div class="upload-area">
+                <div style="font-size:48px;opacity:.3;margin-bottom:15px;">🖼️</div>
+                <p>Перетащите изображение сюда или <span style="color:#1a73e8;text-decoration:underline;cursor:pointer;">загрузите файл</span>.</p>
+            </div>
+            <div class="or-divider">ИЛИ</div>
+            <div class="url-input-row">
+                <input type="text" class="url-input" placeholder="Вставьте ссылку на изображение">
+                <button class="search-btn" onclick="showPage('geography-3')">Найти <span class="blink">👆</span></button>
+            </div>
+        </div>
+
+        <div class="nav-row start" style="margin-top:24px;">
+            <button class="btn btn-home" onclick="showPage('main')">На главную</button>
+        </div>
+    </div>
+</div>
+
+<!-- ==================== ГЕОГРАФИЯ 3 — Результат ==================== -->
+<div class="page" id="geography-3">
+    <div class="container">
+        <img src="img/kom16.png" class="img-full" alt="Спутниковый снимок">
+        <div class="img-arrow-wrap">
+            <button class="blink" onclick="showPage('geography-4')"
+                style="font-size:36px;background:none;border:none;cursor:pointer;">👉</button>
+        </div>
+
+        <div class="nav-row start">
+            <button class="btn btn-home" onclick="showPage('main')">На главную</button>
+        </div>
+    </div>
+</div>
+
+<!-- ==================== ГЕОГРАФИЯ 4 — Описание ==================== -->
+<div class="page" id="geography-4">
+    <div class="container">
+        <p style="font-style:italic;margin-bottom:20px;">Необходимо загрузить исследуемое изображение в соответствующее поле</p>
+
+        <div class="speech-bubble" style="display:inline-block;">
+            <img src="img/kom17.png" style="max-width:280px;border-radius:10px;display:block;">
+        </div>
+
+        <div class="speech-bubble" style="max-width:700px;">
+            <p><strong>Изображение демонстрирует дельту реки Лены</strong></p>
+            <p style="margin-top:8px;">Особенности Дельты Лены:</p>
+            <p>— дельта расположена в Булунском районе Якутии, Россия, где река Лена впадает в море Лаптевых;</p>
+            <p>— она занимает площадь около 32 000 квадратных километров и является домом для Усть-Ленского природного заповедника — самой обширной охраняемой дикой территории в России.</p>
+        </div>
+
+        <div class="nav-row">
+            <button class="btn btn-home" onclick="showPage('main')">На главную</button>
+            <button class="btn btn-continue" onclick="showPage('geography-5')">Попробовать</button>
+        </div>
+    </div>
+</div>
+
+<!-- ==================== ГЕОГРАФИЯ 5 — Финал ==================== -->
+<div class="page" id="geography-5">
+    <div class="container">
+        <div class="msg-teacher"><span class="label">Учитель:</span> Я столкнулся со спутниковым снимком, однако не могу определить, какой конкретно объект на нем запечатлен. Как мне быть?</div>
+        <div class="msg-ai"><span class="label">ИИ:</span> Существуют разные онлайн-ресурсы и приложения для определения объектов, а также сейчас разработали идентификаторы объектов на основе ИИ</div>
+        <div class="msg-teacher"><span class="label">Учитель:</span> А можешь подробнее рассказать про идентификатор объектов на основе ИИ</div>
+        <div class="msg-ai"><span class="label">ИИ:</span> Конечно!</div>
+
+        <div class="final-row">
+            <div>
+                <button class="btn btn-home" onclick="showPage('main')">На главную</button>
+            </div>
+            <div class="copy-block">
+                <div class="bookmark-icon">📋</div>
+                <div>
+                    <p class="copy-hint">Сохрани изображение и попробуй определить объект на снимке</p>
+                    <img src="img/kom20.png" style="max-width:140px;border-radius:10px;display:block;">
+                </div>
+            </div>
+            <div>
+                <a href="https://lens.google.com/" class="lens-link" target="_blank">
+                    <img src="img/kom18.png" style="max-width:140px;border-radius:10px;">
+                    <span class="blink" style="font-size:28px;">👈</span>
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ==================== ХИМИЯ 1 ==================== -->
+<div class="page" id="chemistry-1">
+    <div class="container">
+        <div class="msg-teacher"><span class="label">Учитель:</span> Учащийся принес в школу минерал и спросил меня о его названии. Как нам с учащимся разобраться, что же это за минерал?</div>
+        <div class="msg-ai"><span class="label">ИИ:</span> Существуют разные онлайн-ресурсы и приложения для определения объектов, а также сейчас разработали идентификаторы объектов на основе ИИ</div>
+        <div class="msg-teacher"><span class="label">Учитель:</span> А можешь подробнее рассказать про идентификатор объектов на основе ИИ</div>
+        <div class="msg-ai"><span class="label">ИИ:</span> Конечно!</div>
+
+        <div class="nav-row">
+            <button class="btn btn-home" onclick="showPage('main')">На главную</button>
+            <button class="btn btn-continue" onclick="showPage('chemistry-2')">Продолжение <span class="blink">👆</span></button>
+        </div>
+    </div>
+</div>
+
+<!-- ==================== ХИМИЯ 2 — Grasp ==================== -->
+<div class="page" id="chemistry-2">
+    <div class="container">
+        <div class="grasp-header">
+            <div class="grasp-logo">Grasp</div>
+            <div class="grasp-nav">
+                <a href="#">Инструменты</a>
+                <a href="#">Цены</a>
+                <a href="#" class="login-btn">Войти</a>
+                <span>🌐 Русский</span>
+            </div>
+        </div>
+
+        <div class="tools-grid">
+            <div class="tool-card">
+                <div class="tool-icon">🧠</div>
+                <div class="tool-title">Онлайн Определитель Драгоценных Камней</div>
+                <div class="tool-desc">Не знаете, какой у вас драгоценный камень? Наш ИИ-определитель мгновенно анализирует фото и предоставляет точную идентификацию с детальными характеристиками.</div>
+                <button class="tool-btn" onclick="showPage('chemistry-3')">Попробовать <span class="blink">👆</span></button>
+            </div>
+            <div class="tool-card">
+                <div class="tool-icon">📋</div>
+                <div class="tool-title">Онлайн определитель породы кошек</div>
+                <div class="tool-desc">Не знаете, какой породы ваша кошка? Наш ИИ-инструмент мгновенно анализирует фотографию и определяет породу с высокой точностью.</div>
+                <button class="tool-btn">Попробовать</button>
+            </div>
+            <div class="tool-card">
+                <div class="tool-icon">👤</div>
+                <div class="tool-title">Онлайн Face Analyzer с ИИ</div>
+                <div class="tool-desc">Получите точный анализ лица за секунды с помощью передовых алгоритмов искусственного интеллекта.</div>
+                <button class="tool-btn">Попробовать</button>
+            </div>
+        </div>
+
+        <div class="nav-row start">
+            <button class="btn btn-home" onclick="showPage('main')">На главную</button>
+        </div>
+    </div>
+</div>
+
+<!-- ==================== ХИМИЯ 3 — Загрузка ==================== -->
+<div class="page" id="chemistry-3">
+    <div class="container">
+        <div class="tabs-panel">
+            <div class="tab">📄 Текст</div>
+            <div class="tab">📄 Документ</div>
+            <div class="tab active">🖼️ Изображение <span class="blink">👆</span></div>
+            <span class="close-btn" style="position:relative;margin-left:auto;">&times;</span>
+        </div>
+
+        <div class="upload-zone">
+            <div class="plus">+</div>
+            <p><strong>Выберите файл</strong></p>
+            <p style="color:#999;font-size:14px;margin-top:6px;">или Перетащите файл в любое место</p>
+        </div>
+
+        <div class="nav-row">
+            <button class="btn btn-home" onclick="showPage('main')">На главную</button>
+            <button class="btn btn-continue" onclick="showPage('chemistry-4')">Продолжение <span class="blink">👆</span></button>
+        </div>
+    </div>
+</div>
+
+<!-- ==================== ХИМИЯ 4 — Анализ ==================== -->
+<div class="page" id="chemistry-4">
+    <div class="container">
+        <div class="two-col">
+            <div>
+                <div class="tabs-panel">
+                    <div class="tab">📄 Текст</div>
+                    <div class="tab">📄 Документ</div>
+                    <div class="tab active">🖼️ Изображение</div>
+                    <span class="close-btn" style="position:relative;margin-left:auto;">&times;</span>
+                </div>
+                <div class="image-thumbs">
+                    <img src="img/kom79.png" class="image-thumb">
+                    <div class="image-thumb placeholder">2</div>
+                    <div class="image-thumb placeholder">3</div>
+                    <div class="image-thumb placeholder">4</div>
+                    <div class="image-thumb placeholder">5</div>
+                </div>
+                <div class="upload-zone" style="padding:40px;">
+                    <div class="plus">+</div>
+                    <p><strong>Выберите файл</strong></p>
+                    <p style="color:#999;font-size:14px;margin-top:6px;">или Перетащите файл в любое место</p>
+                </div>
+            </div>
+            <div>
+                <div class="result-tabs">
+                    <span class="result-tab active">Результат</span>
+                    <span class="result-tab">Аналитика</span>
+                    <span class="result-tab">Интеллект-карта</span>
+                    <span class="result-tab">Настроить</span>
+                    <select style="margin-left:auto;padding:5px;font-size:13px;"><option>русский Russian</option></select>
+                    <span class="close-btn" style="position:relative;">&times;</span>
+                </div>
+                <div class="analysis-placeholder">
+                    <p>Здесь появится анализ вашего драгоценного камня, включая его вероятную идентификацию и ключевые характеристики</p>
+                    <button class="analyze-btn" onclick="showPage('chemistry-5')">Определить камень <span class="blink">👆</span></button>
+                </div>
+            </div>
+        </div>
+
+        <div class="nav-row start" style="margin-top:24px;">
+            <button class="btn btn-home" onclick="showPage('main')">На главную</button>
+        </div>
+    </div>
+</div>
+
+<!-- ==================== ХИМИЯ 5 — Результат ==================== -->
+<div class="page" id="chemistry-5">
+    <div class="container">
+        <p style="font-style:italic;margin-bottom:20px;">Необходимо загрузить исследуемое изображение в соответствующее поле</p>
+
+        <div class="speech-bubble" style="display:inline-block;">
+            <img src="img/kom79.png" class="image-thumb">
+        </div>
+
+        <div class="speech-bubble" style="max-width:700px;margin-top:20px;">
+            <p>На основании предоставленного изображения, я считаю, что это, скорее всего, <strong>обсидиан</strong>.</p>
+            <p style="margin-top:8px;">— камень имеет глубокий черный цвет, что является типичным для обсидиана;</p>
+            <p>— виден стекловидный блеск, что также характерно для обсидиана;</p>
+            <p>— на изображении видны раковистые изломы, что соответствует обсидиану;</p>
+            <p>— камень непрозрачный, что также соответствует обсидиану.</p>
+        </div>
+
+        <div class="speech-bubble" style="max-width:400px;margin-left:auto;margin-top:12px;">
+            <p><em>Возможные альтернативы (менее вероятные):</em></p>
+            <p>— черный оникс;</p>
+            <p>— шерл (черный турмалин).</p>
+        </div>
+
+        <div class="nav-row">
+            <button class="btn btn-home" onclick="showPage('main')">На главную</button>
+            <button class="btn btn-continue" onclick="showPage('chemistry-6')">Попробовать</button>
+        </div>
+    </div>
+</div>
+
+<!-- ==================== ХИМИЯ 6 — Финал ==================== -->
+<div class="page" id="chemistry-6">
+    <div class="container">
+        <div class="msg-teacher"><span class="label">Учитель:</span> Учащийся принес в школу минерал и спросил меня о его названии. Как нам с учащимся разобраться, что же это за минерал?</div>
+        <div class="msg-ai"><span class="label">ИИ:</span> Существуют разные онлайн-ресурсы и приложения для определения объектов, а также сейчас разработали идентификаторы объектов на основе ИИ</div>
+        <div class="msg-teacher"><span class="label">Учитель:</span> А можешь подробнее рассказать про идентификатор объектов на основе ИИ</div>
+        <div class="msg-ai"><span class="label">ИИ:</span> Конечно!</div>
+
+        <div class="images-row">
+            <img src="img/kom79.png" class="image-thumb">
+            <a href="https://grasp.info/ru/tools/image-analyzer" target="_blank"
+               style="display:flex;align-items:center;gap:10px;text-decoration:none;color:inherit;">
+                <img src="img/kom80.png" style="max-width:140px;border-radius:8px;">
+                <span class="blink" style="font-size:28px;">👆</span>
+            </a>
+        </div>
+
+        <div style="margin-top:12px;display:flex;gap:10px;align-items:flex-start;">
+            <span style="color:#ea4335;font-size:22px;">🔖</span>
+            <p style="font-size:13px;color:#666;">Сохрани изображение и попробуй определить что это за минерал или горная порода</p>
+        </div>
+
+        <div class="nav-row start" style="margin-top:24px;">
+            <button class="btn btn-home" onclick="showPage('main')">На главную</button>
+        </div>
+    </div>
+</div>
+
+<script>
+    function showPage(pageId) {
+        document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+        const next = document.getElementById(pageId);
+        if (next) { next.classList.add('active'); window.scrollTo(0, 0); }
+    }
+</script>
+</body>
+</html>

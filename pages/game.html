@@ -1,0 +1,541 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Создание обучающих игр с ИИ</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Segoe UI', Arial, sans-serif; background: #f5f5f5; min-height: 100vh; padding: 20px; }
+
+        .page { display: none; max-width: 1200px; margin: 0 auto; opacity: 0; transition: opacity 0.35s ease; }
+        .page.active { display: block; }
+        .page.visible { opacity: 1; }
+        .container { border: 3px dashed #7c4dff; border-radius: 20px; padding: 40px; background: white; min-height: 500px; }
+
+        /* MESSAGES */
+        .msg-teacher { background: #e8e0f0; border-radius: 15px; padding: 15px 20px; margin-bottom: 15px; max-width: 90%; font-size: 15px; line-height: 1.5; }
+        .msg-teacher .label { color: #7c4dff; font-weight: bold; }
+        .msg-ai { background: #fff3cd; border-radius: 15px; padding: 15px 20px; margin-bottom: 15px; max-width: 90%; font-size: 15px; line-height: 1.5; }
+        .msg-ai .label { color: #e5a800; font-weight: bold; }
+
+        /* CHOICE BUTTONS */
+        .choice-buttons { display: flex; flex-direction: column; gap: 16px; margin-top: 40px; margin-left: 40px; }
+        .choice-btn { display: flex; align-items: center; gap: 10px; padding: 13px 24px; border-radius: 10px; color: white; font-size: 16px; font-weight: 500; border: none; cursor: pointer; transition: transform 0.2s, box-shadow 0.2s; width: 100%; max-width: 520px; }
+        .choice-btn:hover { transform: scale(1.04); box-shadow: 0 4px 15px rgba(0,0,0,0.2); }
+        .choice-btn.purple { background: #9b7fdb; }
+        .choice-btn.green  { background: #5fc3a0; }
+        .choice-btn.yellow { background: #f5c842; color: #333; }
+
+        /* NAV BUTTONS */
+        .nav-wrapper { display: flex; justify-content: space-between; align-items: center; margin-top: 30px; flex-wrap: wrap; gap: 12px; }
+        .continue-wrapper { display: flex; justify-content: flex-end; margin-top: 30px; }
+        .nav-btn, .continue-btn { display: inline-block; padding: 11px 28px; background: #9b7fdb; color: white; text-decoration: none; border-radius: 10px; border: none; cursor: pointer; font-size: 15px; font-weight: 500; transition: background 0.2s, transform 0.1s; width: auto; min-width: 140px; text-align: center; }
+        .nav-btn:hover, .continue-btn:hover { background: #7c4dff; transform: translateY(-1px); }
+
+        /* SPEECH BUBBLE */
+        .speech-bubble { background: white; border: 2px solid #333; border-radius: 15px; padding: 15px 25px; margin: 15px 0; position: relative; font-size: 14px; line-height: 1.6; }
+        .speech-bubble::before { content:''; position:absolute; bottom:-16px; left:28px; border-width:16px 10px 0; border-style:solid; border-color:#333 transparent transparent; }
+        .speech-bubble::after  { content:''; position:absolute; bottom:-13px; left:30px; border-width:13px 8px 0;  border-style:solid; border-color:white transparent transparent; }
+
+        /* COPILOT */
+        .copilot-wrap { display: flex; gap: 24px; align-items: flex-start; flex-wrap: wrap; }
+        .copilot-left { flex: 1; min-width: 300px; }
+        .copilot-right { width: 260px; flex-shrink: 0; }
+        .copilot-label { font-weight: 600; color: #333; margin-bottom: 10px; font-size: 15px; }
+        .copilot-box { background: #fdf6f0; border-radius: 12px; padding: 16px; margin-bottom: 16px; border: 1px solid #f0e8e0; }
+        .copilot-model-btn { display: flex; align-items: center; gap: 8px; padding: 8px 14px; background: white; border: 1px solid #ddd; border-radius: 20px; cursor: pointer; font-size: 13px; }
+        .copilot-input-area { display: flex; align-items: center; background: white; border: 1px solid #ddd; border-radius: 20px; padding: 10px 14px; gap: 8px; }
+        .copilot-input-area span { color: #aaa; font-size: 14px; flex: 1; }
+        .copilot-dropdown { background: white; border-radius: 14px; padding: 8px; }
+        .copilot-option { display: flex; align-items: flex-start; gap: 12px; padding: 11px 12px; border-radius: 10px; cursor: pointer; }
+        .copilot-option:hover { background: #f5f0ff; }
+        .copilot-option.active { background: #e8f5e9; }
+        .copilot-option-title { font-weight: 600; color: #222; font-size: 13px; }
+        .copilot-option-desc { color: #777; font-size: 12px; margin-top: 1px; }
+        .copilot-logo-img { background: #d4f0c0; border-radius: 12px; padding: 20px; text-align: center; margin-bottom: 14px; }
+        .copilot-logo-text { font-size: 30px; font-weight: 700; color: #333; margin-top: 6px; }
+        .copilot-logo-sub { font-size: 11px; color: #555; margin-top: 4px; }
+        .prompt-box { display: flex; gap: 14px; align-items: flex-start; margin-top: 16px; }
+        .prompt-icon { width: 48px; height: 48px; flex-shrink: 0; }
+        .prompt-hint { font-size: 12px; color: #888; margin-bottom: 4px; font-style: italic; }
+        .prompt-text { font-size: 14px; color: #333; line-height: 1.5; font-weight: 600; }
+
+        /* POE */
+        .poe-wrap { display: flex; gap: 24px; align-items: flex-start; flex-wrap: wrap; }
+        .poe-left { flex: 1; min-width: 300px; }
+        .poe-right { width: 260px; flex-shrink: 0; }
+        .poe-container { background: white; border-radius: 16px; box-shadow: 0 2px 16px rgba(0,0,0,0.08); padding: 20px; }
+        .poe-logo { display: flex; align-items: center; justify-content: center; gap: 14px; margin-bottom: 8px; }
+        .poe-icon { width: 56px; height: 56px; background: #222; border-radius: 14px; display: flex; align-items: center; justify-content: center; font-size: 28px; }
+        .poe-text { font-size: 42px; font-weight: 700; color: #222; }
+        .poe-subtitle { font-size: 13px; color: #555; text-align: center; margin-bottom: 16px; }
+        .poe-tabs { display: flex; justify-content: center; gap: 10px; margin-bottom: 16px; flex-wrap: wrap; }
+        .poe-tab { display: flex; align-items: center; gap: 7px; padding: 9px 16px; border-radius: 22px; background: #f0f0f0; cursor: pointer; font-size: 14px; transition: all 0.2s; }
+        .poe-tab.active { background: #e3f0ff; border: 2px solid #2196f3; }
+        .poe-tab.active:hover { background: #d0e8ff; }
+        .poe-input-area { display: flex; align-items: center; gap: 10px; background: #f4f4f4; border-radius: 22px; padding: 14px 18px; margin-top: 14px; }
+        .poe-input-area span { flex: 1; color: #aaa; font-size: 14px; }
+
+        /* APP CREATOR */
+        .app-creator-container { background: white; border-radius: 14px; box-shadow: 0 2px 16px rgba(0,0,0,0.1); padding: 18px; margin: 16px 0; border: 1px solid #e8e0f0; }
+        .app-creator-header { display: flex; align-items: center; gap: 10px; margin-bottom: 12px; }
+        .app-creator-icon { width: 30px; height: 30px; background: linear-gradient(135deg, #667eea, #764ba2); border-radius: 8px; display: flex; align-items: center; justify-content: center; color: white; font-size: 16px; }
+        .app-creator-title { font-weight: 600; color: #333; font-size: 15px; }
+        .app-creator-message { background: #f8f9fa; border-radius: 10px; padding: 12px 15px; margin-bottom: 12px; color: #333; font-size: 14px; line-height: 1.5; }
+        .app-creator-status { display: flex; align-items: center; gap: 8px; margin-bottom: 12px; font-size: 13px; color: #333; }
+        .status-dot { width: 11px; height: 11px; background: #4caf50; border-radius: 50%; animation: pulse 2s infinite; }
+        @keyframes pulse { 0%,100%{opacity:1;} 50%{opacity:0.5;} }
+        .app-creator-code { background: #1e1e1e; border-radius: 8px; padding: 14px; color: #4ec9b0; font-family: 'Consolas','Monaco',monospace; font-size: 12px; line-height: 1.7; }
+
+        .chem3-wrap { display: flex; gap: 24px; align-items: flex-start; flex-wrap: wrap; }
+        .chem3-left { flex: 1.2; min-width: 300px; }
+        .chem3-right { flex: 1; min-width: 240px; display: flex; flex-direction: column; gap: 14px; }
+
+        /* CODE EDITOR */
+        .code-editor { background: #1e1e1e; border-radius: 12px; overflow: hidden; margin: 20px 0; font-family: 'Consolas','Monaco',monospace; }
+        .code-editor-header { display: flex; align-items: center; justify-content: space-between; padding: 10px 16px; background: #2d2d2d; }
+        .code-editor-content { padding: 18px 20px; color: #d4d4d4; font-size: 12px; line-height: 1.7; }
+
+        /* GITHUB */
+        .github-title-badge { background: #e8e0f0; border-radius: 22px; padding: 10px 24px; font-size: 15px; font-weight: 600; color: #333; margin: 0 auto 24px; text-align: center; display: block; width: fit-content; }
+        .github-steps-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; }
+        .github-step-num { font-weight: 600; color: #333; margin-bottom: 6px; font-size: 14px; line-height: 1.4; }
+        .github-logo-big { font-size: 24px; font-weight: 800; color: #111; margin: 10px 0 4px; display: flex; align-items: center; gap: 8px; }
+        .gh-dark { background: #21262d; padding: 10px 14px; border-radius: 8px; color: #fff; font-size: 12px; margin-top: 8px; }
+        .gh-link { color: #58a6ff; }
+        .gh-green-btn { background: #2ea44f; color: white; border-radius: 6px; padding: 7px 14px; font-size: 13px; font-weight: 500; display: inline-flex; align-items: center; gap: 6px; }
+        .gh-outline-btn { background: #f6f8fa; color: #333; border: 1px solid #d0d7de; border-radius: 6px; padding: 7px 14px; font-size: 13px; display: inline-flex; }
+        .gh-toggle { display: flex; align-items: center; justify-content: space-between; background: #21262d; padding: 9px 13px; border-radius: 6px; color: #fff; margin-top: 8px; }
+        .gh-toggle-switch { width: 38px; height: 20px; background: #238636; border-radius: 10px; position: relative; flex-shrink: 0; }
+        .gh-toggle-switch::after { content:''; position:absolute; width:15px; height:15px; background:white; border-radius:50%; right:3px; top:2.5px; }
+        .gh-select { background: #21262d; padding: 8px 12px; border-radius: 6px; color: #fff; display: flex; gap: 10px; align-items: center; font-size: 12px; margin-top: 8px; }
+        .gh-form { background: #21262d; padding: 12px; border-radius: 6px; margin-top: 8px; }
+        .gh-pill { background: #30363d; color: #c9d1d9; border-radius: 14px; padding: 3px 10px; font-size: 11px; }
+
+        /* ANNOTATION */
+        .annotation { display: flex; align-items: center; gap: 10px; margin: 14px 0; padding: 10px 16px; background: white; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.09); }
+        .annotation-icon { width: 38px; height: 38px; background: #ff6b6b; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: white; font-size: 18px; flex-shrink: 0; }
+
+        a.start-link { display: inline-block; margin-top: 28px; padding: 11px 28px; background: #b38bfa; color: white; border-radius: 10px; text-decoration: none; font-size: 15px; font-weight: 500; transition: background 0.2s; width: auto; min-width: 140px; text-align: center; }
+        a.start-link:hover { background: #9b7fdb; }
+
+        @media (max-width: 900px) {
+            .container { padding: 24px; }
+            .choice-buttons { margin-left: 0; }
+            .github-steps-grid { grid-template-columns: 1fr; }
+            .copilot-right, .poe-right { width: 100%; }
+        }
+        @media (max-width: 600px) {
+            body { padding: 10px; }
+            .container { padding: 16px; }
+            .nav-btn, .continue-btn { padding: 10px 18px; font-size: 14px; width: 100%; text-align: center; }
+            .nav-wrapper { flex-direction: column; }
+            .choice-btn { min-width: unset; width: 100%; }
+            .poe-text { font-size: 30px; }
+        }
+    </style>
+</head>
+<body>
+
+<!-- ==================== ГЛАВНАЯ ==================== -->
+<div id="page1" class="page active">
+    <div class="container">
+        <div class="msg-teacher">
+            <span class="label">Учитель:</span> У меня есть идея, но есть и проблема с созданием <strong>обучающих игр</strong>
+        </div>
+        <div class="choice-buttons">
+            <button class="choice-btn purple" onclick="showPage('chem1')">
+                <span>╰┈➤</span> Это было с учителем химии
+            </button>
+            <button class="choice-btn green" onclick="showPage('bio1')">
+                <span>╰┈➤</span> Это было с учителем биологии
+            </button>
+            <button class="choice-btn yellow" onclick="showPage('geo1')">
+                <span>╰┈➤</span> Это было с учителем географии
+            </button>
+        </div>
+        <a href="../index.html" class="start-link">На старт</a>
+    </div>
+</div>
+
+<!-- ==================== БИОЛОГИЯ ==================== -->
+<div id="bio1" class="page">
+    <div class="container">
+        <div class="msg-teacher"><span class="label">Учитель:</span> Учащимся нравится играть в любом возрасте. Свои уроки стараюсь разнообразить игровой формой работы. Как упростить процесс создания обучающих игр?</div>
+        <div class="msg-ai"><span class="label">ИИ:</span> Вот несколько рекомендаций по упрощению этого процесса: используйте готовые шаблоны и интерактивные платформы, создавайте свои мини-игры</div>
+        <div class="msg-teacher"><span class="label">Учитель:</span> А ты можешь создать HTML-код игры?</div>
+        <div class="msg-ai"><span class="label">ИИ:</span> Да, конечно! Создам для вас интересную игру. Укажите, по какой теме нужно создать игру</div>
+        <div class="continue-wrapper">
+            <button class="continue-btn" onclick="showPage('bio2')">Продолжение</button>
+        </div>
+    </div>
+</div>
+
+<div id="bio2" class="page">
+    <div class="container">
+        <div class="copilot-wrap">
+            <div class="copilot-left">
+                <div class="copilot-label">Выбираем нужную категорию инструмента для учителя: шаг 1</div>
+                <div class="copilot-box">
+                    <div class="copilot-input-area"><span>Сообщение для Copilot</span></div>
+                    <div style="display:flex;align-items:center;gap:10px;margin-top:10px;">
+                        <button class="copilot-model-btn">+ &nbsp;Smart (GPT-5) ▼</button>
+                        <span style="margin-left:auto;font-size:18px;color:#aaa;">🎤</span>
+                    </div>
+                </div>
+                <div class="copilot-label">Выбираем нужную категорию инструмента для учителя: шаг 2</div>
+                <div class="copilot-box" style="padding:8px;">
+                    <div class="copilot-dropdown">
+                        <div class="copilot-option"><span style="font-size:16px;">✳️</span><div><div class="copilot-option-title">Smart (GPT-5)</div><div class="copilot-option-desc">Думает глубоко или быстро в зависимости от задачи</div></div></div>
+                        <div class="copilot-option"><span style="font-size:16px;">⚡</span><div><div class="copilot-option-title">Быстрый ответ</div><div class="copilot-option-desc">Лучше всего подходит для повседневного общения</div></div></div>
+                        <div class="copilot-option"><span style="font-size:16px;">⚙️</span><div><div class="copilot-option-title">Think Deeper</div><div class="copilot-option-desc">Лучше подходит для более сложных тем</div></div></div>
+                        <div class="copilot-option active"><span style="font-size:16px;">📚</span><div><div class="copilot-option-title">Изучение и обучение</div><div class="copilot-option-desc">Тесты, интерактивное обучение и многое другое</div></div></div>
+                        <div class="copilot-option"><span style="font-size:16px;">🔍</span><div><div class="copilot-option-title">Search</div><div class="copilot-option-desc">Ответы с расширенными ссылками</div></div></div>
+                    </div>
+                    <div style="font-size:13px;color:#aaa;padding:10px 12px 4px;">При необходимости <strong style="color:#555;">заняться сегодня?</strong></div>
+                    <div style="display:flex;align-items:center;gap:10px;padding:8px 12px;">
+                        <span style="color:#aaa;font-size:13px;">Сооб...</span>
+                        <button class="copilot-model-btn" style="margin-left:auto;">+ Smart (GPT-5) ▼</button>
+                        <span style="font-size:18px;color:#aaa;">🎤</span>
+                    </div>
+                </div>
+            </div>
+            <div class="copilot-right">
+                <div class="copilot-logo-img">
+    <div style="font-size:52px;">🌈</div>
+    <div class="copilot-logo-text">Copilot</div>
+    <div class="copilot-logo-sub">
+        <a href="https://copilot.microsoft.com" target="_blank">Your AI companion</a>
+    </div>
+</div>
+                <div class="prompt-box">
+                    <svg class="prompt-icon" viewBox="0 0 48 48" fill="none"><rect x="4" y="4" width="36" height="40" rx="4" stroke="#e05c5c" stroke-width="3"/><rect x="10" y="10" width="36" height="40" rx="4" stroke="#e05c5c" stroke-width="3" fill="white"/></svg>
+                    <div><div class="prompt-hint">Скопируй этот текст и попробуй HTML-код игры</div><div class="prompt-text">Напиши HTML-код игры для 9 класса по биологии на тему «Гормоны» на русском языке. Игра должна содержать 3 уровня сложности; в каждом уровне по пять вопросов</div></div>
+                </div>
+            </div>
+        </div>
+        <div class="nav-wrapper">
+            <button class="nav-btn" onclick="showPage('page1')">На главную</button>
+            <button class="nav-btn" onclick="showPage('bio3')">Результат</button>
+        </div>
+    </div>
+</div>
+
+<div id="bio3" class="page">
+    <div class="container">
+        <div class="speech-bubble" style="max-width:520px;">
+            <strong>Вот простая HTML-игра-викторина по теме «Гормоны» для 9 класса. Она поможет учащимся закрепить знания о функциях гормонов и их железах</strong>
+        </div>
+        <div class="code-editor">
+            <div class="code-editor-header">
+                <span style="color:#4ec9b0;font-size:13px;font-weight:600;">Html ↑</span>
+                <span style="color:#ccc;font-size:12px;cursor:pointer;">📋 Копировать</span>
+            </div>
+            <div class="code-editor-content">
+                <div><span style="color:#569cd6;">&lt;!DOCTYPE html&gt;</span></div>
+                <div><span style="color:#569cd6;">&lt;html</span> <span style="color:#9cdcfe;">lang</span>=<span style="color:#ce9178;">"ru"</span><span style="color:#569cd6;">&gt;</span></div>
+                <div><span style="color:#569cd6;">&lt;head&gt;</span></div>
+                <div>&nbsp;&nbsp;<span style="color:#569cd6;">&lt;meta</span> <span style="color:#9cdcfe;">charset</span>=<span style="color:#ce9178;">"UTF-8"</span> <span style="color:#569cd6;">/&gt;</span></div>
+                <div>&nbsp;&nbsp;<span style="color:#569cd6;">&lt;title&gt;</span>Гормональный вызов<span style="color:#569cd6;">&lt;/title&gt;</span></div>
+                <div>&nbsp;&nbsp;<span style="color:#569cd6;">&lt;style&gt;</span></div>
+                <div>&nbsp;&nbsp;&nbsp;&nbsp;<span style="color:#9cdcfe;">body</span> { <span style="color:#9cdcfe;">font-family</span>: <span style="color:#ce9178;">sans-serif</span>; <span style="color:#9cdcfe;">background</span>: <span style="color:#ce9178;">#f0f8ff</span>; <span style="color:#9cdcfe;">padding</span>: <span style="color:#ce9178;">20px</span>; <span style="color:#9cdcfe;">max-width</span>: <span style="color:#ce9178;">700px</span>; <span style="color:#9cdcfe;">margin</span>: <span style="color:#ce9178;">auto</span>; }</div>
+                <div>&nbsp;&nbsp;&nbsp;&nbsp;<span style="color:#9cdcfe;">h1</span> { <span style="color:#9cdcfe;">color</span>: <span style="color:#ce9178;">#006064</span>; }</div>
+                <div>&nbsp;&nbsp;&nbsp;&nbsp;<span style="color:#6a9955;">/* ... продолжение кода ... */</span></div>
+            </div>
+        </div>
+        <div class="annotation">
+            <div class="annotation-icon">👆</div>
+            <div style="font-size:14px;color:#333;">Как преобразовать HTML-код в сайт?</div>
+        </div>
+        <div class="nav-wrapper">
+            <button class="nav-btn" onclick="showPage('page1')">На главную</button>
+            <button class="nav-btn" onclick="showPage('bio2')">Играть</button>
+            <button class="nav-btn" onclick="showPage('bio4')">Что деаль дальше</button>
+        </div>
+    </div>
+</div>
+
+<div id="bio4" class="page">
+    <div class="container">
+      
+        <div class="github-steps-grid">
+            <div><div class="github-step-num">Шаг 1. Копируем сгенерированный HTML-код</div></div>
+            <div><div class="github-step-num">Шаг 8. Readme должен быть включен (On)</div><div class="gh-toggle"><span style="font-size:12px;">Add README</span><div class="gh-toggle-switch"></div></div></div>
+            <div><div class="github-step-num">Шаг 2. Открываем программу "Блокнот" или "Word"</div></div>
+            <div><div class="github-step-num">Шаг 9. Создаем репозиторий (кнопка create Repository)</div></div>
+            <div><div class="github-step-num">Шаг 3. Вставляем скопированный HTML-код и сохраняем файл в формате .html</div></div>
+            <div><div class="github-step-num">Шаг 10. Добавляем созданный ранее файл .Html</div><div style="display:flex;gap:10px;margin-top:10px;flex-wrap:wrap;"><span class="gh-green-btn">➕ Add file ▼</span><span class="gh-outline-btn">&lt;&gt; Code ▼</span></div></div>
+            <div><div class="github-step-num">Шаг 4. Переходим на онлайн-сервис GitHub</div><div class="github-logo-big">⚫ GitHub</div></div>
+            <div><div class="github-step-num">Шаг 11. Нажимаем кнопку Commit Changes</div></div>
+            <div><div class="github-step-num">Шаг 5. Регистрируемся на GitHub</div></div>
+            <div><div class="github-step-num">Шаг 12. Переходим во вкладку Settings → Pages и изменяем настройки, сохраняем изменения</div><div class="gh-select">Branch: main &nbsp;/(root) <span class="gh-green-btn" style="padding:4px 12px;font-size:12px;">Save</span></div></div>
+            <div><div class="github-step-num">Шаг 6. Создаем новый репозиторий</div><div class="gh-dark">+ New repository</div></div>
+            <div><div class="github-step-num">Шаг 13. Ссылка на сайт готова. В поисковой строке браузера добавляем после последнего символа "/" подпись "название файла.html"</div><div class="gh-dark" style="margin-top:8px;"><div style="color:#8b949e;font-size:11px;">Your site is live at</div><a href="#" class="gh-link">https://editapetrushenya.github.io/gameGeo/</a></div></div>
+            <div style="grid-column:1/-1;"><div class="github-step-num">Шаг 7. Называем новый репозиторий</div><div class="gh-form"><div style="display:flex;align-items:center;gap:12px;"><span class="gh-pill">EditaPetrushenya ▼</span><span style="color:#aaa;">/</span></div></div></div>
+        </div>
+        <div class="nav-wrapper" style="margin-top:30px;">
+            <button class="nav-btn" onclick="showPage('page1')">На главную</button>
+        </div>
+    </div>
+</div>
+
+<!-- ==================== ГЕОГРАФИЯ ==================== -->
+<div id="geo1" class="page">
+    <div class="container">
+        <div class="msg-teacher"><span class="label">Учитель:</span> Учащимся нравится играть в любом возрасте. Свои уроки стараюсь разнообразить игровой формой работы. Как упростить процесс создания обучающих игр?</div>
+        <div class="msg-ai"><span class="label">ИИ:</span> Вот несколько рекомендаций по упрощению этого процесса: используйте готовые шаблоны и интерактивные платформы, создавайте свои мини-игры</div>
+        <div class="msg-teacher"><span class="label">Учитель:</span> А ты можешь создать HTML-код игры?</div>
+        <div class="msg-ai"><span class="label">ИИ:</span> Да, конечно! Создам для вас интересную игру. Укажите, по какой теме нужно создать игру</div>
+        <div class="continue-wrapper">
+            <button class="continue-btn" onclick="showPage('geo2')">Продолжение</button>
+        </div>
+    </div>
+</div>
+
+<div id="geo2" class="page">
+    <div class="container">
+        <div class="copilot-wrap">
+            <div class="copilot-left">
+                <div class="copilot-label">Выбираем нужную категорию инструмента для учителя: шаг 1</div>
+                <div class="copilot-box">
+                    <div class="copilot-input-area"><span>Сообщение для Copilot</span></div>
+                    <div style="display:flex;align-items:center;gap:10px;margin-top:10px;">
+                        <button class="copilot-model-btn">+ &nbsp;Smart (GPT-5) ▼</button>
+                        <span style="margin-left:auto;font-size:18px;color:#aaa;">🎤</span>
+                    </div>
+                </div>
+                <div class="copilot-label">Выбираем нужную категорию инструмента для учителя: шаг 2</div>
+                <div class="copilot-box" style="padding:8px;">
+                    <div class="copilot-dropdown">
+                        <div class="copilot-option"><span style="font-size:16px;">✳️</span><div><div class="copilot-option-title">Smart (GPT-5)</div><div class="copilot-option-desc">Думает глубоко или быстро в зависимости от задачи</div></div></div>
+                        <div class="copilot-option"><span style="font-size:16px;">⚡</span><div><div class="copilot-option-title">Быстрый ответ</div><div class="copilot-option-desc">Лучше всего подходит для повседневного общения</div></div></div>
+                        <div class="copilot-option"><span style="font-size:16px;">⚙️</span><div><div class="copilot-option-title">Think Deeper</div><div class="copilot-option-desc">Лучше подходит для более сложных тем</div></div></div>
+                        <div class="copilot-option active"><span style="font-size:16px;">📚</span><div><div class="copilot-option-title">Изучение и обучение</div><div class="copilot-option-desc">Тесты, интерактивное обучение и многое другое</div></div></div>
+                        <div class="copilot-option"><span style="font-size:16px;">🔍</span><div><div class="copilot-option-title">Search</div><div class="copilot-option-desc">Ответы с расширенными ссылками</div></div></div>
+                    </div>
+                    <div style="font-size:13px;color:#aaa;padding:10px 12px 4px;">При необходимости <strong style="color:#555;">заняться сегодня?</strong></div>
+                    <div style="display:flex;align-items:center;gap:10px;padding:8px 12px;">
+                        <span style="color:#aaa;font-size:13px;">Сооб...</span>
+                        <button class="copilot-model-btn" style="margin-left:auto;">+ Smart (GPT-5) ▼</button>
+                        <span style="font-size:18px;color:#aaa;">🎤</span>
+                    </div>
+                </div>
+            </div>
+            <div class="copilot-right">
+                <<div class="copilot-right">
+                <div class="copilot-logo-img">
+				<div class="copilot-logo-sub">
+        <a href="https://copilot.microsoft.com" target="_blank">Your AI companion</a>
+    </div>
+                    <div style="font-size:52px;">🌈</div>
+                    <div class="copilot-logo-text">Copilot</div>
+                    <div class="copilot-logo-sub">Your AI companion</div>
+                </div>
+                <div class="prompt-box">
+                    <svg class="prompt-icon" viewBox="0 0 48 48" fill="none"><rect x="4" y="4" width="36" height="40" rx="4" stroke="#e05c5c" stroke-width="3"/><rect x="10" y="10" width="36" height="40" rx="4" stroke="#e05c5c" stroke-width="3" fill="white"/></svg>
+                    <div><div class="prompt-hint">Скопируй этот текст и попробуй HTML-код игры</div><div class="prompt-text">Напиши HTML-код игры на тему «Численность населения мира и её динамика. Миграции населения» на русском языке</div></div>
+                </div>
+            </div>
+                
+            </div>
+        </div>
+        <div class="nav-wrapper">
+            <button class="nav-btn" onclick="showPage('page1')">На главную</button>
+            <button class="nav-btn" onclick="showPage('geo3')">Результат</button>
+        </div>
+    </div>
+</div>
+
+<div id="geo3" class="page">
+    <div class="container">
+        <div class="speech-bubble" style="max-width:600px;">
+            <strong>Игра: «Численность населения мира и её динамика. Миграции населения» — HTML (один файл). Ниже — готовый HTML-файл с мини-игрой: викториной, интерактивной моделью демографии, картой потоков миграции и системой очков.</strong>
+        </div>
+        <div class="code-editor">
+            <div class="code-editor-header">
+                <span style="color:#4ec9b0;font-size:13px;font-weight:600;">Html ↑</span>
+                <span style="color:#ccc;font-size:12px;cursor:pointer;">📋 Копировать</span>
+            </div>
+            <div class="code-editor-content">
+                <div><span style="color:#569cd6;">&lt;!DOCTYPE html&gt;</span></div>
+                <div><span style="color:#569cd6;">&lt;html</span> <span style="color:#9cdcfe;">lang</span>=<span style="color:#ce9178;">"ru"</span><span style="color:#569cd6;">&gt;</span></div>
+                <div><span style="color:#569cd6;">&lt;head&gt;</span></div>
+                <div>&nbsp;&nbsp;<span style="color:#569cd6;">&lt;meta</span> <span style="color:#9cdcfe;">charset</span>=<span style="color:#ce9178;">"UTF-8"</span> <span style="color:#569cd6;">/&gt;</span></div>
+                <div>&nbsp;&nbsp;<span style="color:#569cd6;">&lt;title&gt;</span>Численность населения мира<span style="color:#569cd6;">&lt;/title&gt;</span></div>
+                <div>&nbsp;&nbsp;<span style="color:#569cd6;">&lt;style&gt;</span></div>
+                <div>&nbsp;&nbsp;&nbsp;&nbsp;<span style="color:#9cdcfe;">:root</span> { <span style="color:#9cdcfe;">--bg</span>: <span style="color:#ce9178;">#faf7f2</span>; <span style="color:#9cdcfe;">--paper</span>: <span style="color:#ce9178;">#fffaf0</span>; <span style="color:#9cdcfe;">--ink</span>: <span style="color:#ce9178;">#2f2a26</span>; }</div>
+                <div>&nbsp;&nbsp;&nbsp;&nbsp;<span style="color:#6a9955;">/* ... продолжение кода ... */</span></div>
+            </div>
+        </div>
+        <div class="annotation">
+            <div class="annotation-icon">👆</div>
+            <div style="font-size:14px;color:#333;">Как преобразовать HTML-код в сайт?</div>
+        </div>
+        <div class="nav-wrapper">
+            <button class="nav-btn" onclick="showPage('page1')">На главную</button>
+            <button class="nav-btn" onclick="showPage('geo2')">Играть</button>
+            <button class="nav-btn" onclick="showPage('geo4')">Что делать дальше</button>
+        </div>
+    </div>
+</div>
+
+<div id="geo4" class="page">
+    <div class="container">
+
+        <div class="github-steps-grid">
+            <div><div class="github-step-num">Шаг 1. Копируем сгенерированный HTML-код</div></div>
+            <div><div class="github-step-num">Шаг 8. Readme должен быть включен (On)</div><div class="gh-toggle"><span style="font-size:12px;">Add README</span><div class="gh-toggle-switch"></div></div></div>
+            <div><div class="github-step-num">Шаг 2. Открываем программу "Блокнот" или "Word"</div></div>
+            <div><div class="github-step-num">Шаг 9. Создаем репозиторий (кнопка create Repository)</div></div>
+            <div><div class="github-step-num">Шаг 3. Вставляем скопированный HTML-код и сохраняем файл в формате .html</div></div>
+            <div><div class="github-step-num">Шаг 10. Добавляем созданный ранее файл .Html</div><div style="display:flex;gap:10px;margin-top:10px;flex-wrap:wrap;"><span class="gh-green-btn">➕ Add file ▼</span><span class="gh-outline-btn">&lt;&gt; Code ▼</span></div></div>
+            <div><div class="github-step-num">Шаг 4. Переходим на онлайн-сервис GitHub</div><div class="github-logo-big">⚫ GitHub</div></div>
+            <div><div class="github-step-num">Шаг 11. Нажимаем кнопку Commit Changes</div></div>
+            <div><div class="github-step-num">Шаг 5. Регистрируемся на GitHub</div></div>
+            <div><div class="github-step-num">Шаг 12. Переходим во вкладку Settings → Pages и изменяем настройки, сохраняем изменения</div><div class="gh-select">Branch: main &nbsp;/(root) <span class="gh-green-btn" style="padding:4px 12px;font-size:12px;">Save</span></div></div>
+            <div><div class="github-step-num">Шаг 6. Создаем новый репозиторий</div><div class="gh-dark">+ New repository</div></div>
+            <div><div class="github-step-num">Шаг 13. Ссылка на сайт готова. В поисковой строке браузера добавляем после последнего символа "/" подпись "название файла.html"</div><div class="gh-dark" style="margin-top:8px;"><div style="color:#8b949e;font-size:11px;">Your site is live at</div><a href="#" class="gh-link">https://editapetrushenya.github.io/gameGeo/</a></div></div>
+            <div style="grid-column:1/-1;"><div class="github-step-num">Шаг 7. Называем новый репозиторий</div><div class="gh-form"><div style="display:flex;align-items:center;gap:12px;"><span class="gh-pill">EditaPetrushenya ▼</span><span style="color:#aaa;">/</span></div></div></div>
+        </div>
+        <div class="nav-wrapper" style="margin-top:30px;">
+            <button class="nav-btn" onclick="showPage('page1')">На главную</button>
+        </div>
+    </div>
+</div>
+
+<!-- ==================== ХИМИЯ ==================== -->
+<div id="chem1" class="page">
+    <div class="container">
+        <div class="msg-teacher"><span class="label">Учитель:</span> Учащимся нравится играть в любом возрасте. Свои уроки стараюсь разнообразить игровой формой работы. Как упростить процесс создания обучающих игр?</div>
+        <div class="msg-ai"><span class="label">ИИ:</span> Вот несколько рекомендаций по упрощению этого процесса: используйте готовые шаблоны и интерактивные платформы, создавайте свои мини-игры</div>
+        <div class="msg-teacher"><span class="label">Учитель:</span> А ты можешь создать игру?</div>
+        <div class="msg-ai"><span class="label">ИИ:</span> Да, конечно! Создам для вас интересную игру. Укажите, по какой теме нужно создать игру</div>
+        <div class="continue-wrapper">
+            <button class="continue-btn" onclick="showPage('chem2')">Продолжение</button>
+        </div>
+    </div>
+</div>
+
+<div id="chem2" class="page">
+    <div class="container">
+        <div class="poe-wrap">
+            <div class="poe-left">
+                <div class="poe-container">
+                    <div class="poe-logo">
+                        <div class="poe-icon">🤖</div>
+                        <div class="poe-text">Poe</div>
+                    </div>
+                    <div class="poe-subtitle">Выбираем инструмент «App-Creator»</div>
+                    <div class="poe-tabs">
+                        <div class="poe-tab"><span>💬</span><span>Assistant</span></div>
+                        <div class="poe-tab active" onclick="showPage('chem3')" style="cursor:pointer;">
+                            <span>📱</span><span>App-Creator</span>
+                        </div>
+                        <div class="poe-tab"><span>📗</span><span>StudyingGPT</span></div>
+                        <div class="poe-tab"><span>🔍</span></div>
+                    </div>
+                    <div class="poe-input-area">
+                        <span>Start a new chat</span>
+                        <button style="border:none;background:none;font-size:20px;cursor:pointer;">+</button>
+                        <button style="border:none;background:none;font-size:18px;cursor:pointer;">🎤</button>
+                        <button style="border:none;background:none;font-size:18px;cursor:pointer;">➤</button>
+                    </div>
+                </div>
+            </div>
+            <div class="poe-right">
+                <div class="prompt-box">
+                    <svg class="prompt-icon" viewBox="0 0 48 48" fill="none"><rect x="4" y="4" width="36" height="40" rx="4" stroke="#e05c5c" stroke-width="3"/><rect x="10" y="10" width="36" height="40" rx="4" stroke="#e05c5c" stroke-width="3" fill="white"/></svg>
+                    <div><div class="prompt-hint">Скопируй этот текст и попробуй создать игру</div><div class="prompt-text">Сгенерируй игру на русском языке на тему «Окислительно-восстановительные реакции»</div></div>
+                </div>
+            </div>
+        </div>
+        <div class="nav-wrapper">
+            <button class="nav-btn" onclick="showPage('page1')">На главную</button>
+            <button class="nav-btn" onclick="showPage('chem3')">Создать игру</button>
+        </div>
+    </div>
+</div>
+
+<div id="chem3" class="page">
+    <div class="container">
+        <div class="chem3-wrap">
+            <div class="chem3-left">
+                <div class="speech-bubble" style="max-width:420px;">
+                    <strong>Сгенерируй игру на русском языке на тему «Окислительно-восстановительные реакции»</strong>
+                </div>
+                <div class="app-creator-container">
+                    <div class="app-creator-header">
+                        <div class="app-creator-icon">📱</div>
+                        <div class="app-creator-title">App-Creator</div>
+                    </div>
+                    <div class="app-creator-message">Создам для вас интерактивную образовательную игру по окислительно-восстановительным реакциям на русском языке!</div>
+                    <div class="app-creator-status"><div class="status-dot"></div><span>Write( index.html )</span></div>
+                    <div class="app-creator-code">
+                        <div style="color:#858585;">diff</div>
+                        <div><span style="color:#4ec9b0;">+</span> <span style="color:#ce9178;">858</span>&nbsp;&nbsp;questionIndex = null;</div>
+                        <div><span style="color:#4ec9b0;">+</span> <span style="color:#ce9178;">859</span>&nbsp;&nbsp;}</div>
+                        <div><span style="color:#4ec9b0;">+</span> <span style="color:#ce9178;">860</span>&nbsp;&nbsp;loadQuestion();</div>
+                        <div><span style="color:#4ec9b0;">+</span> <span style="color:#ce9178;">863</span>&nbsp;&nbsp;<span style="color:#6a9955;">// Запуск игры</span></div>
+                        <div><span style="color:#4ec9b0;">+</span> <span style="color:#ce9178;">864</span>&nbsp;&nbsp;updateStats();</div>
+                        <div><span style="color:#4ec9b0;">+</span> <span style="color:#ce9178;">865</span>&nbsp;&nbsp;loadQuestion();</div>
+                        <div><span style="color:#4ec9b0;">+</span> <span style="color:#ce9178;">866</span>&nbsp;&nbsp;&lt;/script&gt;</div>
+                        <div><span style="color:#4ec9b0;">+</span> <span style="color:#ce9178;">867</span>&nbsp;&nbsp;&lt;/body&gt;</div>
+                        <div><span style="color:#4ec9b0;">+</span> <span style="color:#ce9178;">868</span>&nbsp;&nbsp;&lt;/html&gt;</div>
+                    </div>
+                    <div style="margin-top:12px;color:#555;font-size:13px;line-height:1.5;">Готово! Я создал интерактивную образовательную игру по окислительно-восстановительным реакциям на русском языке.</div>
+                </div>
+            </div>
+            <div class="chem3-right">
+                <div class="speech-bubble">При необходимости запрос дополняется</div>
+                <div class="speech-bubble">Когда нажимаешь на подсказку, то не работает кнопка «Понятно»</div>
+                <div class="speech-bubble" style="margin-left:auto;max-width:320px;">
+                    <strong>Сейчас исправлю эту проблему! Ошибка в том, что обработчик события добавлен через onclick в HTML, что может не работать корректно</strong>
+                </div>
+            </div>
+        </div>
+        <div class="nav-wrapper">
+            <button class="nav-btn" onclick="showPage('page1')">На главную</button>
+            <button class="nav-btn" onclick="showPage('chem2')">Играть</button>
+            <button class="nav-btn" onclick="showPage('chem4')">Попробовать</button>
+        </div>
+    </div>
+</div>
+
+<div id="chem4" class="page">
+    <div class="container">
+        
+ <img src="img/kom78.png" alt="Моя картинка" style="max-width:100%; height:auto;">
+        <div class="nav-wrapper" style="margin-top:30px;">
+            <button class="nav-btn" onclick="showPage('page1')">На главную</button>
+        </div>
+    </div>
+</div>
+
+<script>
+    function showPage(pageId) {
+        const current = document.querySelector('.page.active');
+        const next = document.getElementById(pageId);
+        if (!next) return;
+        if (current) {
+            current.style.opacity = '0';
+            setTimeout(() => {
+                current.classList.remove('active', 'visible');
+                current.style.opacity = '';
+                next.classList.add('active');
+                window.scrollTo(0, 0);
+                requestAnimationFrame(() => requestAnimationFrame(() => next.classList.add('visible')));
+            }, 280);
+        } else {
+            next.classList.add('active');
+            window.scrollTo(0, 0);
+            requestAnimationFrame(() => requestAnimationFrame(() => next.classList.add('visible')));
+        }
+    }
+    window.addEventListener('DOMContentLoaded', () => {
+        const first = document.querySelector('.page.active');
+        if (first) requestAnimationFrame(() => requestAnimationFrame(() => first.classList.add('visible')));
+    });
+</script>
+</body>
+</html>
