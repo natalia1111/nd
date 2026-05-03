@@ -202,23 +202,25 @@
             font-size: 1.1em;
         }
 
-        .back-btn {
-            display: inline-block;
-            margin-top: 30px;
-            padding: 12px 30px;
-            background: #9b7fdb;
-            color: white;
-            text-decoration: none;
-            border-radius: 25px;
-            cursor: pointer;
-            transition: background 0.2s;
-            border: none;
-            font-size: 1em;
-        }
+        .back-btn-fixed {
+  position: fixed;
+  bottom: 20px;
+  left: 20px;
+  padding: 10px 22px;
+  background: #1bb8b3; /* бирюзовая */
+  color: #fff;
+  font-weight: 700;
+  font-size: 14px;
+  border-radius: 10px;
+  text-decoration: none;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.15);
+  transition: background .15s, transform .1s;
+}
 
-        .back-btn:hover {
-            background: #7c4dff;
-        }
+.back-btn-fixed:hover {
+  background: #17a5a0;
+  transform: translateY(-2px);
+}
 
         .icon-audio::before { content: "🎧"; font-size: 60px; }
         .icon-animation::before { content: "🎬"; font-size: 60px; }
@@ -618,8 +620,9 @@
                 <button class="back-btn" onclick="showPage('home')">На главную</button>
             </div>
         </div>
+		
     </div>
-
+<a href="index.html" class="back-btn-fixed">Назад</a>
     <script>
         function showPage(pageId) {
             document.querySelectorAll('.page').forEach(page => {
